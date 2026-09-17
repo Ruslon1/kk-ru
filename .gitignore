@@ -1,0 +1,27 @@
+# Data and evaluation
+data/raw/
+data/filtered/
+data/eval/
+*.tsv
+*.gz
+*.zip
+*.tar.gz
+*.part
+
+# Environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.cache/
+.hf-cache/
+.pip-cache/
+.sacrebleu/
+
+# Training artifacts and logs
+checkpoints/
+wandb/
+runs/
+
+# OS metadata
+.DS_Store
