@@ -12,7 +12,7 @@ Eval: **только** FLORES+ `dev` (early stop) и `devtest` (финальны
 | [OPUS kk–ru](https://opus.nlpl.eu/opusapi/?source=kk&target=ru&preprocessing=moses&latest=True) | ~0.72M у них; сейчас ~0.79M moses | `scripts/download_raw.py --opus` |
 | [issai/kazparc](https://huggingface.co/datasets/issai/kazparc) | 2.15M kk–ru (весь HF gated) | `huggingface-cli login` + accept license, затем `--kazparc` |
 | [WMT19 crawl kk–ru](http://data.statmt.org/wmt19/translation-task/crawl.kk-ru.gz) | 5.06M | `--wmt19` |
-| [TIL corpus](https://github.com/turkic-interlingua/til-mt) | 4.40M | `--til` (нужна ссылка с GitHub/Drive) |
+| [TIL corpus](https://github.com/turkic-interlingua/til-mt) | 4.40M | `--til --gcp-project PROJ` (Requester Pays GCS, нужен биллинг) |
 
 Фильтр kazRush (в этом порядке):
 

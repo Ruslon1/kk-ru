@@ -42,5 +42,5 @@
 - OPUS moses: собрано **789,436** пар из 13 подкорпусов (GNOME, KDE4, MultiCCAligned, NeuLab-TedTalks, News-Commentary, OpenSubtitles, QED, TED2020, Tatoeba, Ubuntu, WikiMatrix, XLEnt, wikimedia).
 - FLORES+: эталонный eval из `openlanguagedata/flores_plus` (dev: 997, devtest: 1,012).
 - Extra (опциональные для M_extra): `kazlit.kk-ru.tsv` (54.5k) и `kaznu.kk-ru.tsv` (209.7k).
-- **TIL**: GCS bucket `til-corpus` отдаёт 403 (billing account closed), исходники можно положить локально и импортировать через `python scripts/download_raw.py --til-from <path>`.
+- **TIL**: бакет `gs://til-corpus` — **Requester Pays** (у владельца биллинг закрыт, `UserProjectAccountProblem`). Качается через `python scripts/download_raw.py --til --gcp-project <PROJ>` (нужен GCP-проект с активным биллингом) либо вручную `gsutil -u <PROJ> cp -r gs://til-corpus/corpus/train/kk-ru ...` + `--til-from`.
 - Это сырой корпус. Следующий этап — фильтрация по пайплайну kazRush (дедуп, чистка мусора, FastText langid, LaBSE, OpusFilter).

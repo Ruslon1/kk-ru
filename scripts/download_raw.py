@@ -5,6 +5,8 @@ Usage:
   python scripts/download_raw.py --flores
   python scripts/download_raw.py --opus
   python scripts/download_raw.py --wmt19
+  python scripts/download_raw.py --til                      # TIL kk-ru train (Requester Pays GCS)
+  python scripts/download_raw.py --til --gcp-project PROJ   # bill PROJ for the egress
   python scripts/download_raw.py --kazparc   # needs HF login + accepted terms
   python scripts/download_raw.py --all-open  # flores + opus + wmt19 (no gated)
 
@@ -45,6 +47,10 @@ OPUS_MOSES = [
 ]
 
 WMT19_CRAWL = "http://data.statmt.org/wmt19/translation-task/crawl.kk-ru.gz"
+
+# TIL corpus: public GCS bucket. gsutil returns 403 (billing closed), but the bucket
+# is readable over plain HTTPS. License: CC BY-NC-SA 4.0 (non-commercial).
+TIL_BASE = "https://storage.googleapis.com/til-corpus"
 
 FLORES_REPO = "openlanguagedata/flores_plus"
 FLORES_LANGS = ("kaz_Cyrl", "rus_Cyrl")
@@ -180,12 +186,28 @@ def download_flores() -> None:
         _write_tsv(EVAL / f"{split}.kk-ru.tsv", pairs)
 
 
-def download_til() -> None:
-    print(
-        "TIL is not a single public HTTP file.\n"
-        "Get kk-ru from https://github.com/turkic-interlingua/til-mt\n"
-        "Put aligned files in data/raw/_til/ and re-run with --til-from data/raw/_til"
-    )
+def download_til(project: str | None = None) -> None:
+    """Download TIL kk-ru train split from the Requester Pays GCS bucket.
+
+    gs://til-corpus is Requester Pays: object GETs must bill a GCP project with
+    an active billing account (``?userProject=<project-id>``). Without one, print
+    the manual gsutil recipe and let ``--til-from`` import a local copy instead.
+    """
+    if not project:
+        print(
+            "TIL bucket gs://til-corpus is Requester Pays (owner billing closed).\n"
+            "Download with a billing-enabled GCP project:\n\n"
+            "  gsutil -m -u YOUR_PROJECT cp -r gs://til-corpus/corpus/train/kk-ru data/raw/_til/\n"
+            "  python scripts/download_raw.py --til-from data/raw/_til\n\n"
+            "or let this script do it:\n\n"
+            "  python scripts/download_raw.py --til --gcp-project YOUR_PROJECT"
+        )
+        return
+    staging = RAW / "_til"
+    staging.mkdir(parents=True, exist_ok=True)
+    for name in ("kk-ru.kk", "kk-ru.ru"):
+        _download(f"{TIL_BASE}/corpus/train/kk-ru/{name}?userProject={project}", staging / name)
+    til_from(staging)
 
 
 def til_from(src: Path) -> None:
@@ -221,7 +243,8 @@ def main() -> None:
     p.add_argument("--opus", action="store_true", help="Download OPUS kk-ru moses dumps")
     p.add_argument("--wmt19", action="store_true", help="Download WMT19 crawl")
     p.add_argument("--kazparc", action="store_true", help="Download KazParC (human + sync)")
-    p.add_argument("--til", action="store_true", help="Instructions for TIL corpus")
+    p.add_argument("--til", action="store_true", help="Download TIL kk-ru train (Requester Pays GCS)")
+    p.add_argument("--gcp-project", type=str, help="GCP project id to bill for the TIL Requester Pays egress")
     p.add_argument("--til-from", type=Path, help="Directory or file to import TIL bitext from")
     p.add_argument("--all-open", action="store_true", help="Download all open datasets (flores + opus + wmt19)")
     args = p.parse_args()
@@ -241,7 +264,7 @@ def main() -> None:
         download_kazparc()
         ran = True
     if args.til:
-        download_til()
+        download_til(args.gcp_project)
         ran = True
     if args.til_from:
         til_from(args.til_from)
