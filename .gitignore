@@ -1,12 +1,15 @@
 # Data and evaluation
 data/raw/
 data/filtered/
+data/tokenizer/
 data/eval/
 *.tsv
 *.gz
 *.zip
 *.tar.gz
 *.part
+*.model
+*.vocab
 
 # Environments and caches
 .venv/
@@ -17,11 +20,16 @@ __pycache__/
 .hf-cache/
 .pip-cache/
 .sacrebleu/
+.pytest_cache/
+*.egg-info/
 
 # Training artifacts and logs
 checkpoints/
+reports/
 wandb/
 runs/
+build/
+dist/
 
 # OS metadata
 .DS_Store

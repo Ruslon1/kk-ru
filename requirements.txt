@@ -1,0 +1,20 @@
+# Runtime dependencies (training on the 4090 box, Linux, CUDA 12.x).
+# T1 pins exact versions after a working install: pip freeze > requirements.lock.txt
+torch                      # CUDA 12.x build
+transformers
+accelerate
+datasets
+sentencepiece
+tokenizers
+sacremoses
+sacrebleu
+sentence-transformers
+fasttext-wheel             # fb fasttext langid (use fasttext-wheel, not the stale `fasttext` pkg)
+unbabel-comet              # COMET metric (T8)
+numpy
+pandas
+tqdm
+pyyaml
+
+# Optional / non-critical for M1:
+# opusfilter               # final cleanup step only; skip if install is painful
