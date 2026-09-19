@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 from collections import Counter
 from pathlib import Path
@@ -15,7 +16,8 @@ OUT = ROOT / "data" / "INVENTORY.md"
 
 
 def iter_pairs(path: Path):
-    with path.open("r", encoding="utf-8", errors="replace") as f:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", encoding="utf-8", errors="replace") as f:
         for line in f:
             line = line.rstrip("\n")
             if "\t" not in line:
@@ -89,6 +91,7 @@ def main() -> None:
         RAW / "kazparc_human.kk-ru.tsv",
         RAW / "kazparc_sync.kk-ru.tsv",
         RAW / "kazparc.kk-ru.tsv",
+        RAW / "til.kk-ru.tsv.gz",
         EVAL / "flores_plus" / "dev.kk-ru.tsv",
         EVAL / "flores_plus" / "devtest.kk-ru.tsv",
         RAW / "extra" / "kazlit.kk-ru.tsv",
@@ -151,7 +154,7 @@ def main() -> None:
         "- OPUS moses: собрано **789,436** пар из 13 подкорпусов (GNOME, KDE4, MultiCCAligned, NeuLab-TedTalks, News-Commentary, OpenSubtitles, QED, TED2020, Tatoeba, Ubuntu, WikiMatrix, XLEnt, wikimedia).",
         "- FLORES+: эталонный eval из `openlanguagedata/flores_plus` (dev: 997, devtest: 1,012).",
         "- Extra (опциональные для M_extra): `kazlit.kk-ru.tsv` (54.5k) и `kaznu.kk-ru.tsv` (209.7k).",
-        "- **TIL**: GCS bucket `til-corpus` отдаёт 403 (billing account closed), исходники можно положить локально и импортировать через `python scripts/download_raw.py --til-from <path>`.",
+        "- **TIL**: скачан из [Drive-зеркала](https://drive.google.com/drive/folders/1kUp_vpDsNUZvVC6HvwNxGn7ImwnCfM1E) в `til/` (train в 2 zip + dev + test{bible,ted,x-wmt}). Импорт: `python scripts/import_til.py` → `data/raw/til.kk-ru.tsv.gz`. Лицензия CC BY-NC-SA 4.0.",
         "- Это сырой корпус. Следующий этап — фильтрация по пайплайну kazRush (дедуп, чистка мусора, FastText langid, LaBSE, OpusFilter).",
         "",
     ]

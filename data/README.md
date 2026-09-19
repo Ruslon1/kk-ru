@@ -12,7 +12,7 @@ Eval: **только** FLORES+ `dev` (early stop) и `devtest` (финальны
 | [OPUS kk–ru](https://opus.nlpl.eu/opusapi/?source=kk&target=ru&preprocessing=moses&latest=True) | ~0.72M у них; сейчас ~0.79M moses | `scripts/download_raw.py --opus` |
 | [issai/kazparc](https://huggingface.co/datasets/issai/kazparc) | 2.15M kk–ru (весь HF gated) | `huggingface-cli login` + accept license, затем `--kazparc` |
 | [WMT19 crawl kk–ru](http://data.statmt.org/wmt19/translation-task/crawl.kk-ru.gz) | 5.06M | `--wmt19` |
-| [TIL corpus](https://github.com/turkic-interlingua/til-mt) | 4.40M | `--til --gcp-project PROJ` (Requester Pays GCS, нужен биллинг) |
+| [TIL corpus](https://github.com/turkic-interlingua/til-mt) | 4.40M | [Drive-зеркало](https://drive.google.com/drive/folders/1kUp_vpDsNUZvVC6HvwNxGn7ImwnCfM1E) → `til/` → `scripts/import_til.py` |
 
 Фильтр kazRush (в этом порядке):
 
@@ -38,6 +38,21 @@ Eval: **только** FLORES+ `dev` (early stop) и `devtest` (финальны
 
 KazParC paper ([arxiv:2403.19399](https://arxiv.org/abs/2403.19399)): **372k human** kk/en/ru/tr. Цифра kazRush **2.15M** — kk–ru срез HF-датасета (там ещё crawled/другие пары). Берём kk–ru, как они.
 
-## Диск
+## Диск и формат хранения
 
-Сырьё ~5–12 GB. После фильтра меньше. Скачивать на машину с 4090, не в git.
+```
+til/                      # сырые zip'ы TIL из Drive-зеркала (архив, не трогаем)
+data/raw/*.kk-ru.tsv[.gz] # распакованное сырьё по источникам, kк<TAB>ru
+data/filtered/            # результат фильтра (T4), вход обучения
+data/eval/flores_plus/    # dev/devtest — в train НЕ класть
+```
+
+Правила для больших текстов (стандарт OPUS: `train.raw.tsv.gz`):
+
+- **потоково** читать/писать — не грузить весь файл в память (`scripts/import_til.py` так и делает);
+- **gzip** для крупных файлов (`*.tsv.gz`, экономит ~75% диска);
+- сырьё и обработанное раздельно, сырьё не переписывать;
+- в git ничего не класть (`.gitignore`);
+- Parquet — только если данных станет на порядок больше; на ~12M пар потокового TSV достаточно.
+
+Сырьё ~5–12 GB. После фильтра меньше. Качать/держать на машине с 4090, не в git.

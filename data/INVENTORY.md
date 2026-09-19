@@ -7,6 +7,7 @@
 | `data/raw/kazparc_human.kk-ru.tsv` | 132.5 MB | 371,902 | 368,201 | 3,701 | 1,638 | 12.5/9/34 | 13.5/10/37 |
 | `data/raw/kazparc_sync.kk-ru.tsv` | 735.1 MB | 1,797,066 | 1,787,446 | 9,620 | 90 | 14.8/14/27 | 16.8/16/31 |
 | `data/raw/kazparc.kk-ru.tsv` | 867.6 MB | 2,168,968 | 2,155,581 | 13,387 | 1,728 | 14.4/13/28 | 16.3/15/32 |
+| `data/raw/til.kk-ru.tsv.gz` | 625.5 MB | 4,413,843 | 4,413,818 | 25 | 3,746 | 17.7/15/38 | 18.5/16/40 |
 | `data/eval/flores_plus/dev.kk-ru.tsv` | 0.5 MB | 997 | 997 | 0 | 0 | 16.6/16/27 | 19.2/18/32 |
 | `data/eval/flores_plus/devtest.kk-ru.tsv` | 0.5 MB | 1,012 | 1,012 | 0 | 0 | 17.2/16/28 | 19.4/19/32 |
 | `data/raw/extra/kazlit.kk-ru.tsv` | 8.0 MB | 22,132 | 22,132 | 0 | 7 | 15.5/13/35 | 16.6/14/38 |
@@ -20,6 +21,7 @@
 | `data/raw/kazparc_human.kk-ru.tsv` | 4,376 | 1.2% |
 | `data/raw/kazparc_sync.kk-ru.tsv` | 1 | 0.0% |
 | `data/raw/kazparc.kk-ru.tsv` | 4,377 | 0.2% |
+| `data/raw/til.kk-ru.tsv.gz` | 4,337,902 | 98.3% |
 | `data/eval/flores_plus/dev.kk-ru.tsv` | 0 | 0.0% |
 | `data/eval/flores_plus/devtest.kk-ru.tsv` | 0 | 0.0% |
 | `data/raw/extra/kazlit.kk-ru.tsv` | 0 | 0.0% |
@@ -42,5 +44,5 @@
 - OPUS moses: собрано **789,436** пар из 13 подкорпусов (GNOME, KDE4, MultiCCAligned, NeuLab-TedTalks, News-Commentary, OpenSubtitles, QED, TED2020, Tatoeba, Ubuntu, WikiMatrix, XLEnt, wikimedia).
 - FLORES+: эталонный eval из `openlanguagedata/flores_plus` (dev: 997, devtest: 1,012).
 - Extra (опциональные для M_extra): `kazlit.kk-ru.tsv` (54.5k) и `kaznu.kk-ru.tsv` (209.7k).
-- **TIL**: бакет `gs://til-corpus` — **Requester Pays** (у владельца биллинг закрыт, `UserProjectAccountProblem`). Качается через `python scripts/download_raw.py --til --gcp-project <PROJ>` (нужен GCP-проект с активным биллингом) либо вручную `gsutil -u <PROJ> cp -r gs://til-corpus/corpus/train/kk-ru ...` + `--til-from`.
+- **TIL**: скачан из [Drive-зеркала](https://drive.google.com/drive/folders/1kUp_vpDsNUZvVC6HvwNxGn7ImwnCfM1E) в `til/` (train в 2 zip + dev + test{bible,ted,x-wmt}). Импорт: `python scripts/import_til.py` → `data/raw/til.kk-ru.tsv.gz`. Лицензия CC BY-NC-SA 4.0.
 - Это сырой корпус. Следующий этап — фильтрация по пайплайну kazRush (дедуп, чистка мусора, FastText langid, LaBSE, OpusFilter).
