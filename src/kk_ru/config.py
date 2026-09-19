@@ -1,8 +1,3 @@
-"""Config loading: YAML -> typed dataclasses, with dotted ``key=value`` overrides.
-
-Single source of truth is ``configs/*.yaml``. Overrides for quick sweeps:
-    python -m kk_ru.train --config configs/p0.yaml --opts train.epochs=5 model.d_model=768
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -103,7 +98,6 @@ _SECTIONS = {
 
 
 def _coerce(current: Any, value: str) -> Any:
-    """Coerce a CLI string to the type of the field it is overriding."""
     if isinstance(current, bool):
         return value.lower() in ("1", "true", "yes", "on")
     if isinstance(current, int):
@@ -131,7 +125,6 @@ def _apply_overrides(cfg: Config, overrides: list[str]) -> None:
 
 
 def load_config(path: str | Path, overrides: list[str] | None = None) -> Config:
-    """Load a YAML config into a :class:`Config`, then apply dotted overrides."""
     path = Path(path)
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(raw, dict):

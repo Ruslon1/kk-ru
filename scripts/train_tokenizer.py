@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""Обучение SentencePiece 32k (shared KK+RU). Спецификация — TASKS.md T5.
-
-Вход: data/filtered/train.kk-ru.tsv (обе колонки).
-Выход: data/tokenizer/kk-ru-sp32k.model + .vocab.
-Спецтокены: <pad> <unk> <bos> <eos>. character_coverage вынести в параметр (старт 0.9995).
-"""
 from __future__ import annotations
 
 import argparse

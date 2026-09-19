@@ -1,4 +1,3 @@
-"""Shared utilities: seeding, logging, timing, human-readable numbers."""
 from __future__ import annotations
 
 import logging
@@ -11,7 +10,6 @@ import torch
 
 
 def set_seed(seed: int) -> None:
-    """Seed python/numpy/torch for reproducibility (call at start of train/eval)."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -29,7 +27,6 @@ def get_logger(name: str = "kk_ru", level: int = logging.INFO) -> logging.Logger
 
 
 def human(n: float) -> str:
-    """Compact count: 1234567 -> '1.23M'."""
     units = ["", "K", "M", "B", "T"]
     for unit in units:
         if abs(n) < 1000 or unit == units[-1]:
@@ -40,7 +37,6 @@ def human(n: float) -> str:
 
 @contextmanager
 def timer(label: str, logger: logging.Logger | None = None):
-    """Context manager that prints elapsed seconds on exit."""
     start = time.perf_counter()
     yield
     elapsed = time.perf_counter() - start

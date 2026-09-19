@@ -4,10 +4,6 @@ Encoder–decoder **~200M** с Qwen-блоком (Pre-LN, RMSNorm, RoPE, QK-Norm
 обучение с нуля. Цель — побить [`deepvk/kazRush-kk-ru`](https://huggingface.co/deepvk/kazRush-kk-ru)
 (197M T5, FLORES+ kk→ru BLEU 18.8 / chrF 48.7 / COMET 86.7) при **том же масштабе и тех же данных**.
 
-- Канонический план: [`PLAN.md`](PLAN.md)
-- Задачи исполнителю (DeepSeek): [`TASKS.md`](TASKS.md)
-- Данные и скачивание: [`data/README.md`](data/README.md), инвентарь [`data/INVENTORY.md`](data/INVENTORY.md)
-
 ## Структура
 
 ```
@@ -67,15 +63,3 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Оценка | `make eval` |
 | Тесты | `make test` |
 | Линт | `make lint` |
-
-## Статус
-
-| Часть | Задача | Статус |
-|---|---|---|
-| Скелет + конфиг + утилиты | T1–T2 | ✅ |
-| Модель + `count_params` | T3 | ⏳ |
-| Фильтр корпуса | T4 | ⏳ |
-| SentencePiece 32k | T5 | ⏳ |
-| Даталоадер | T6 | ⏳ |
-| Train (DDP) + оверфит | T7 | ⏳ |
-| Eval FLORES+ | T8 | ⏳ |

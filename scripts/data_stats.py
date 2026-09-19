@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Quick inventory for downloaded KK–RU bitext (no GPU)."""
 
 from __future__ import annotations
 
@@ -12,7 +11,6 @@ from statistics import mean, median
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
 EVAL = ROOT / "data" / "eval"
-OUT = ROOT / "data" / "INVENTORY.md"
 
 
 def iter_pairs(path: Path):
@@ -105,7 +103,7 @@ def main() -> None:
         print("stats", p)
         rows.append(summarize(p))
 
-    # exact overlap vs WMT19 (largest)
+
     wmt = next((r for r in rows if "wmt19" in r["file"]), None)
     lines = ["# Inventory KK–RU (raw, до фильтра)", ""]
     lines.append("| файл | размер | пар | unique | exact dups | identical kk=ru | kk tok mean/p50/p95 | ru tok mean/p50/p95 |")
@@ -128,7 +126,7 @@ def main() -> None:
             frac = inter / r["unique"] if r["unique"] else 0
             lines.append(f"| `{r['file']}` | {inter:,} | {frac:.1%} |")
 
-    # opus vs kazparc human
+
     by = {r["file"]: r for r in rows}
     def inter(a, b):
         if a not in by or b not in by:
@@ -158,8 +156,7 @@ def main() -> None:
         "- Это сырой корпус. Следующий этап — фильтрация по пайплайну kazRush (дедуп, чистка мусора, FastText langid, LaBSE, OpusFilter).",
         "",
     ]
-    OUT.write_text("\n".join(lines), encoding="utf-8")
-    print("wrote", OUT)
+    print("\n".join(lines))
 
 
 if __name__ == "__main__":

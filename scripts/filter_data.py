@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""Фильтр корпуса KK→RU. Спецификация — TASKS.md T4, PLAN.md §7.
-
-Порядок (именно так, как у kazRush):
-  1. дедуп (точные пары kk+ru);
-  2. чистка (HTML/теги, пробелы/юникод, пустые/короткие, kk == ru);
-  3. langid: facebook/fasttext-language-identification (kk->kk, ru->ru);
-  4. LaBSE: sentence-transformers/LaBSE, cosine(kk, ru) >= threshold (параметр).
-
-Вход: data/raw/{opus,wmt19_crawl,kazparc}.kk-ru.tsv (+ til при появлении).
-Выход: data/filtered/train.kk-ru.tsv. Каждый шаг печатает «было → стало».
-FLORES+ (data/eval/**) в train НЕ класть; проверить отсутствие точного пересечения.
-"""
 from __future__ import annotations
 
 import argparse

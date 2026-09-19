@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""Download raw KK–RU bitext for the kazRush-matched mix (+ FLORES+ eval).
-
-Usage:
-  python scripts/download_raw.py --flores
-  python scripts/download_raw.py --opus
-  python scripts/download_raw.py --wmt19
-  python scripts/download_raw.py --til       # TIL: Drive mirror + scripts/import_til.py
-  python scripts/download_raw.py --kazparc   # needs HF login + accepted terms
-  python scripts/download_raw.py --all-open  # flores + opus + wmt19 (no gated)
-
-Writes TSV files: data/raw/<name>.kk-ru.tsv  (kk \\t ru)
-"""
 
 from __future__ import annotations
 
@@ -29,7 +17,7 @@ RAW = ROOT / "data" / "raw"
 EVAL = ROOT / "data" / "eval" / "flores_plus"
 
 OPUS_MOSES = [
-    # latest moses dumps from opus.nlpl.eu API (kk-ru)
+
     "https://object.pouta.csc.fi/OPUS-GNOME/v1/moses/kk-ru.txt.zip",
     "https://object.pouta.csc.fi/OPUS-KDE4/v2/moses/kk-ru.txt.zip",
     "https://object.pouta.csc.fi/OPUS-MultiCCAligned/v1.1/moses/kk-ru.txt.zip",
@@ -47,8 +35,8 @@ OPUS_MOSES = [
 
 WMT19_CRAWL = "http://data.statmt.org/wmt19/translation-task/crawl.kk-ru.gz"
 
-# TIL corpus: distributed via the Google Drive mirror (see data/README.md) and
-# imported from local zips with scripts/import_til.py. License: CC BY-NC-SA 4.0.
+
+
 
 FLORES_REPO = "openlanguagedata/flores_plus"
 FLORES_LANGS = ("kaz_Cyrl", "rus_Cyrl")
@@ -79,9 +67,9 @@ def _write_tsv(path: Path, pairs: list[tuple[str, str]]) -> None:
 
 def _opus_zip_name(url: str) -> str:
     parts = url.rstrip("/").split("/")
-    # parts[-4]: corpus name (e.g. OPUS-GNOME)
-    # parts[-3]: version (e.g. v1)
-    # parts[-1]: filename (e.g. kk-ru.txt.zip)
+
+
+
     return f"{parts[-4]}_{parts[-3]}_{parts[-1]}"
 
 
@@ -185,16 +173,14 @@ def download_flores() -> None:
 
 
 def download_til() -> None:
-    """TIL comes from a local Drive-mirror download, imported by import_til.py."""
     print(
         "TIL corpus: download the kk-ru zips from the Google Drive mirror into til/\n"
-        "(link and layout in data/README.md), then import them:\n\n"
+        "then import them:\n\n"
         "  python scripts/import_til.py\n"
     )
 
 
 def til_from(src: Path) -> None:
-    """Merge two aligned files (*.kk + *.ru) or a tsv into opus-style tsv."""
     src = src.expanduser().resolve()
     if not src.exists():
         raise SystemExit(f"missing {src}")
@@ -226,7 +212,7 @@ def main() -> None:
     p.add_argument("--opus", action="store_true", help="Download OPUS kk-ru moses dumps")
     p.add_argument("--wmt19", action="store_true", help="Download WMT19 crawl")
     p.add_argument("--kazparc", action="store_true", help="Download KazParC (human + sync)")
-    p.add_argument("--til", action="store_true", help="Import TIL kk-ru from local Drive zips (see data/README.md)")
+    p.add_argument("--til", action="store_true", help="Import TIL kk-ru from local Drive zips")
     p.add_argument("--til-from", type=Path, help="Directory or file to import TIL bitext from")
     p.add_argument("--all-open", action="store_true", help="Download all open datasets (flores + opus + wmt19)")
     args = p.parse_args()
