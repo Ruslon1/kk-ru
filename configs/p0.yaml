@@ -1,0 +1,60 @@
+# P0: Qwen-style encoder–decoder ~200M. Единственный источник правды.
+# Значения — строго из PLAN.md §4 и §8. Не менять без согласования.
+
+model:
+  type: encoder-decoder        # не decoder-only
+  vocab: 32000                 # shared SentencePiece KK+RU, эмбеддинги с нуля
+  tie_embeddings: true         # lm_head = input embeddings
+  d_model: 512
+  n_heads: 8                   # query heads везде
+  head_dim: 64
+  n_kv_heads_encoder: 8        # encoder self-attn: full MHA
+  n_kv_heads_decoder_self: 4   # decoder self-attn: GQA 8Q/4KV
+  n_kv_heads_cross: 8          # cross-attn: full MHA
+  n_encoder_layers: 12
+  n_decoder_layers: 12
+  ffn: swiglu
+  ffn_hidden: 4096             # SwiGLU 512 -> 4096 -> 512
+  norm: rmsnorm                # Pre-LN
+  qk_norm: true
+  pos: rope                    # только на self-attn (не на cross-attn)
+  dropout: 0.1
+  max_len: 256
+
+tokenizer:
+  sp_model: data/tokenizer/kk-ru-sp32k.model
+  vocab_size: 32000
+
+data:
+  train_tsv: data/filtered/train.kk-ru.tsv
+  eval_dev: data/eval/flores_plus/dev.kk-ru.tsv
+  eval_test: data/eval/flores_plus/devtest.kk-ru.tsv
+
+train:
+  precision: bf16
+  devices: 4                  # информационно; фактическое число процессов задаёт Accelerate
+  strategy: ddp               # информационно; реализация — HuggingFace Accelerate
+  micro_batch_per_gpu: 16     # 200M, seq 256; OOM -> 8, влезает -> 32
+  grad_accum: 4               # 4 GPU x 16 x 4 = 256 (global batch)
+  epochs: 3
+  optimizer: adamw
+  lr: 2.0e-4
+  warmup_steps: 2000
+  schedule: cosine
+  min_lr: 2.0e-5
+  weight_decay: 0.01
+  clip_grad_norm: 1.0
+  label_smoothing: 0.1
+  save_every: 2000
+  eval_every: 2000
+  max_steps: null
+  seed: 42
+
+gen:
+  beam: 5
+  max_len: 256
+
+paths:
+  checkpoints: checkpoints
+  reports: reports
+  logs: runs
