@@ -10,7 +10,6 @@ Encoder–decoder **~200M** с Qwen-блоком (Pre-LN, RMSNorm, RoPE, QK-Norm
 configs/p0.yaml        # единственный источник правды по конфигу
 src/kk_ru/             # библиотека: config, model, tokenizer, data, train, eval
 scripts/               # пайплайн данных (download / filter / train_tokenizer)
-tests/                 # контракт (pytest)
 data/                  # сырые / отфильтрованные данные (вне git)
 checkpoints/           # чекпоинты (вне git)
 reports/               # метрики, графики (вне git)
@@ -61,5 +60,3 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Оверфит-тест | `make overfit` |
 | Обучение P0 | `make train` |
 | Оценка | `make eval` |
-| Тесты | `make test` |
-| Линт | `make lint` |

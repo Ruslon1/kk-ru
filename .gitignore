@@ -21,7 +21,6 @@ __pycache__/
 .hf-cache/
 .pip-cache/
 .sacrebleu/
-.pytest_cache/
 *.egg-info/
 
 # Training artifacts and logs
