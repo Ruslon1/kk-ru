@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import io
-import shutil
 import sys
-import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -17,7 +14,6 @@ RAW = ROOT / "data" / "raw"
 EVAL = ROOT / "data" / "eval" / "flores_plus"
 
 OPUS_MOSES = [
-
     "https://object.pouta.csc.fi/OPUS-GNOME/v1/moses/kk-ru.txt.zip",
     "https://object.pouta.csc.fi/OPUS-KDE4/v2/moses/kk-ru.txt.zip",
     "https://object.pouta.csc.fi/OPUS-MultiCCAligned/v1.1/moses/kk-ru.txt.zip",
@@ -34,9 +30,6 @@ OPUS_MOSES = [
 ]
 
 WMT19_CRAWL = "http://data.statmt.org/wmt19/translation-task/crawl.kk-ru.gz"
-
-
-
 
 FLORES_REPO = "openlanguagedata/flores_plus"
 FLORES_LANGS = ("kaz_Cyrl", "rus_Cyrl")
@@ -67,9 +60,6 @@ def _write_tsv(path: Path, pairs: list[tuple[str, str]]) -> None:
 
 def _opus_zip_name(url: str) -> str:
     parts = url.rstrip("/").split("/")
-
-
-
     return f"{parts[-4]}_{parts[-3]}_{parts[-1]}"
 
 
@@ -172,49 +162,17 @@ def download_flores() -> None:
         _write_tsv(EVAL / f"{split}.kk-ru.tsv", pairs)
 
 
-def download_til() -> None:
-    print(
-        "TIL corpus: download the kk-ru zips from the Google Drive mirror into til/\n"
-        "then import them:\n\n"
-        "  python scripts/import_til.py\n"
-    )
-
-
-def til_from(src: Path) -> None:
-    src = src.expanduser().resolve()
-    if not src.exists():
-        raise SystemExit(f"missing {src}")
-    pairs: list[tuple[str, str]] = []
-    if src.is_file() and src.suffix in {".tsv", ".gz"}:
-        opener = gzip.open if src.suffix == ".gz" else open
-        with opener(src, "rt", encoding="utf-8", errors="replace") as f:
-            for line in f:
-                parts = line.rstrip("\n").split("\t")
-                if len(parts) >= 2:
-                    pairs.append((parts[0], parts[1]))
-    else:
-        kks = sorted(src.rglob("*.kk"))
-        rus = sorted(src.rglob("*.ru"))
-        if not kks or not rus:
-            raise SystemExit(f"no *.kk/*.ru under {src}")
-        for kkf, ruf in zip(kks, rus):
-            kk_lines = kkf.read_text("utf-8", errors="replace").splitlines()
-            ru_lines = ruf.read_text("utf-8", errors="replace").splitlines()
-            n = min(len(kk_lines), len(ru_lines))
-            pairs.extend(zip(kk_lines[:n], ru_lines[:n]))
-            print(f"  {kkf.name}: {n:,}")
-    _write_tsv(RAW / "til.kk-ru.tsv", pairs)
-
-
 def main() -> None:
     p = argparse.ArgumentParser(description="Download KK-RU parallel datasets.")
     p.add_argument("--flores", action="store_true", help="Download FLORES+ eval (dev, devtest)")
     p.add_argument("--opus", action="store_true", help="Download OPUS kk-ru moses dumps")
     p.add_argument("--wmt19", action="store_true", help="Download WMT19 crawl")
     p.add_argument("--kazparc", action="store_true", help="Download KazParC (human + sync)")
-    p.add_argument("--til", action="store_true", help="Import TIL kk-ru from local Drive zips")
-    p.add_argument("--til-from", type=Path, help="Directory or file to import TIL bitext from")
-    p.add_argument("--all-open", action="store_true", help="Download all open datasets (flores + opus + wmt19)")
+    p.add_argument(
+        "--all-open",
+        action="store_true",
+        help="Download all open datasets (flores + opus + wmt19 + kazparc)",
+    )
     args = p.parse_args()
     RAW.mkdir(parents=True, exist_ok=True)
 
@@ -228,14 +186,8 @@ def main() -> None:
     if args.all_open or args.wmt19:
         download_wmt19()
         ran = True
-    if args.kazparc:
+    if args.all_open or args.kazparc:
         download_kazparc()
-        ran = True
-    if args.til:
-        download_til()
-        ran = True
-    if args.til_from:
-        til_from(args.til_from)
         ran = True
     if not ran:
         p.print_help()
