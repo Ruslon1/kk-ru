@@ -18,7 +18,7 @@ def main() -> None:
     args = parse_args()
     cfg = load_config(args.config, overrides=args.opts)
 
-    raise NotImplementedError("T8: реализовать оценку")
+    raise NotImplementedError("evaluation")
 
 
 if __name__ == "__main__":

@@ -10,14 +10,14 @@ class RMSNorm(nn.Module):
 
     def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()
-        raise NotImplementedError("T3: реализовать RMSNorm")
+        raise NotImplementedError("RMSNorm")
 
 
 class RotaryEmbedding(nn.Module):
 
     def __init__(self, head_dim: int, max_len: int = 256):
         super().__init__()
-        raise NotImplementedError("T3: реализовать RoPE")
+        raise NotImplementedError("RotaryEmbedding")
 
 
 class Attention(nn.Module):
@@ -33,35 +33,35 @@ class Attention(nn.Module):
         head_dim: int = 64,
     ):
         super().__init__()
-        raise NotImplementedError("T3: реализовать Attention")
+        raise NotImplementedError("Attention")
 
 
 class SwiGLU(nn.Module):
 
     def __init__(self, d_model: int, ffn_hidden: int):
         super().__init__()
-        raise NotImplementedError("T3: реализовать SwiGLU")
+        raise NotImplementedError("SwiGLU")
 
 
 class EncoderBlock(nn.Module):
 
     def __init__(self, cfg: ModelConfig):
         super().__init__()
-        raise NotImplementedError("T3: реализовать EncoderBlock")
+        raise NotImplementedError("EncoderBlock")
 
 
 class DecoderBlock(nn.Module):
 
     def __init__(self, cfg: ModelConfig):
         super().__init__()
-        raise NotImplementedError("T3: реализовать DecoderBlock")
+        raise NotImplementedError("DecoderBlock")
 
 
 class TransformerEncoderDecoder(nn.Module):
 
     def __init__(self, cfg: ModelConfig):
         super().__init__()
-        raise NotImplementedError("T3: реализовать TransformerEncoderDecoder")
+        raise NotImplementedError("TransformerEncoderDecoder")
 
     def forward(
         self,
@@ -69,12 +69,12 @@ class TransformerEncoderDecoder(nn.Module):
         src_mask: torch.Tensor,
         tgt_ids: torch.Tensor,
     ) -> torch.Tensor:
-        raise NotImplementedError("T3: реализовать forward")
+        raise NotImplementedError("forward")
 
 
 def build_model(cfg: ModelConfig) -> TransformerEncoderDecoder:
-    raise NotImplementedError("T3: реализовать build_model")
+    raise NotImplementedError("build_model")
 
 
 def count_params(model: nn.Module) -> int:
-    raise NotImplementedError("T3: реализовать count_params")
+    raise NotImplementedError("count_params")
