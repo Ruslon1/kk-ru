@@ -9,7 +9,7 @@ Encoder–decoder **~200M** с Qwen-блоком (Pre-LN, RMSNorm, RoPE, QK-Norm
 ```
 configs/p0.yaml        # единственный источник правды по конфигу
 src/kk_ru/             # библиотека: config, model, tokenizer, data, train, eval
-scripts/               # пайплайн данных (download / filter / train_tokenizer)
+scripts/               # пайплайн данных (download / filter)
 data/                  # сырые / отфильтрованные данные (вне git)
 checkpoints/           # чекпоинты (вне git)
 reports/               # метрики, графики (вне git)
@@ -27,16 +27,13 @@ make data
 # 3. Фильтр корпуса: дедуп → чистка → langid → LaBSE
 make filter
 
-# 4. SentencePiece 32k (shared KK+RU)
-make tokenizer
-
-# 5. Оверфит 10k — гейт перед большим прогоном (loss → 0)
+# 4. Оверфит 10k — гейт перед большим прогоном (loss → 0)
 make overfit
 
-# 6. Обучение P0 (Accelerate DDP)
+# 5. Обучение P0 (Accelerate DDP)
 make train
 
-# 7. Оценка FLORES+ (BLEU / chrF / COMET)
+# 6. Оценка FLORES+ (BLEU / chrF / COMET)
 make eval
 ```
 
@@ -56,7 +53,6 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Установить окружение | `make install` |
 | Скачать открытые данные | `make data` |
 | Отфильтровать корпус | `make filter` |
-| Натренировать токенизатор | `make tokenizer` |
 | Оверфит-тест | `make overfit` |
 | Обучение P0 | `make train` |
 | Оценка | `make eval` |
