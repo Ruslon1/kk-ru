@@ -1,4 +1,4 @@
-.PHONY: install data filter overfit train eval
+.PHONY: install data filter tokenizer overfit train eval
 
 install:
 	pip install -r requirements.txt
@@ -9,6 +9,9 @@ data:
 
 filter:
 	python scripts/filter_data.py
+
+tokenizer:
+	python scripts/train_tokenizer.py
 
 overfit:
 	accelerate launch -m kk_ru.train --config configs/p0.yaml --overfit
