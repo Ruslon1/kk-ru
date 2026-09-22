@@ -4,6 +4,7 @@ data/raw/
 data/filtered/
 data/tokenizer/
 data/eval/
+data/hf-cache/
 *.tsv
 *.gz
 *.zip
