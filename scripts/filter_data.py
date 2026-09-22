@@ -141,7 +141,7 @@ def langid_pass(in_path):
     print(f"langid: kept {kept:,} | dropped {dropped:,}")
 
 
-def labse_pass(in_path, threshold, device="auto"):
+def labse_pass(in_path, threshold, device="auto", limit=0):
     import torch
     from sentence_transformers import SentenceTransformer
 
@@ -151,14 +151,26 @@ def labse_pass(in_path, threshold, device="auto"):
     model = SentenceTransformer("sentence-transformers/LaBSE", device=device)
     in_path = Path(in_path)
     tmp = in_path.with_name(in_path.name + ".tmp")
+
+    pairs = []
+    with open_text(in_path) as fin:
+        for line in fin:
+            kk, ru = line.rstrip("\n").split("\t")
+            pairs.append((kk, ru))
+            if limit and len(pairs) >= limit:
+                break
+    print(f"loaded {len(pairs):,} pairs, sorting by length", file=sys.stderr)
+    pairs.sort(key=lambda p: len(p[0]) + len(p[1]))
+
     kept = 0
     dropped = 0
     processed = 0
+    next_m = 500_000
     kk_buf = []
     ru_buf = []
 
     def flush(fout):
-        nonlocal kept, dropped, processed
+        nonlocal kept, dropped, processed, next_m
         if not kk_buf:
             return
         e_kk = model.encode(
@@ -169,22 +181,22 @@ def labse_pass(in_path, threshold, device="auto"):
         )
         sims = (e_kk * e_ru).sum(dim=1).tolist()
         for kk, ru, s in zip(kk_buf, ru_buf, sims):
-            processed += 1
             if s >= threshold:
                 fout.write(f"{kk}\t{ru}\n")
                 kept += 1
             else:
                 dropped += 1
-            if processed % 500_000 == 0:
-                print(f"  labse processed {processed:,}", file=sys.stderr)
+        processed += len(kk_buf)
         kk_buf.clear()
         ru_buf.clear()
+        if processed >= next_m:
+            print(f"  labse processed {processed:,}", file=sys.stderr)
+            next_m += 500_000
 
-    with open_text(in_path) as fin, write_text(tmp) as fout:
-        for line in fin:
-            kk, ru = line.rstrip("\n").split("\t")
-            kk_buf.append(kk.strip())
-            ru_buf.append(ru.strip())
+    with write_text(tmp) as fout:
+        for kk, ru in pairs:
+            kk_buf.append(kk)
+            ru_buf.append(ru)
             if len(kk_buf) >= 128:
                 flush(fout)
         flush(fout)
@@ -202,6 +214,7 @@ def main():
     p.add_argument("--skip-langid", action="store_true")
     p.add_argument("--skip-labse", action="store_true")
     p.add_argument("--labse-device", type=str, default="auto", choices=["auto", "cpu", "mps"])
+    p.add_argument("--labse-limit", type=int, default=0)
     args = p.parse_args()
 
     out = args.out
@@ -220,7 +233,7 @@ def main():
 
     if not args.skip_labse:
         try:
-            labse_pass(out, args.labse_threshold, device=args.labse_device)
+            labse_pass(out, args.labse_threshold, device=args.labse_device, limit=args.labse_limit)
         except ImportError:
             print("WARN: sentence-transformers not installed, skipping labse", file=sys.stderr)
 
