@@ -7,18 +7,6 @@ from torch import nn
 from .config import ModelConfig
 
 
-class RMSNorm(nn.Module):
-
-    def __init__(self, dim: int, eps: float = 1e-6):
-        super().__init__()
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(dim))
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        rms = x.pow(2).mean(dim=-1, keepdim=True).add(self.eps).rsqrt()
-        return x * rms * self.weight
-
-
 class RotaryEmbedding(nn.Module):
 
     def __init__(self, head_dim: int, max_len: int = 256):
@@ -68,8 +56,8 @@ class Attention(nn.Module):
         self.wv = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.wo = nn.Linear(n_heads * head_dim, d_model, bias=False)
         self.rotary = RotaryEmbedding(head_dim) if use_rope else None
-        self.q_norm = RMSNorm(head_dim) if qk_norm else None
-        self.k_norm = RMSNorm(head_dim) if qk_norm else None
+        self.q_norm = nn.RMSNorm(head_dim, eps=1e-6) if qk_norm else None
+        self.k_norm = nn.RMSNorm(head_dim, eps=1e-6) if qk_norm else None
 
     def forward(
         self,
@@ -127,8 +115,8 @@ class EncoderBlock(nn.Module):
             head_dim=cfg.head_dim,
         )
         self.ffn = SwiGLU(cfg.d_model, cfg.ffn_hidden)
-        self.norm1 = RMSNorm(cfg.d_model)
-        self.norm2 = RMSNorm(cfg.d_model)
+        self.norm1 = nn.RMSNorm(cfg.d_model, eps=1e-6)
+        self.norm2 = nn.RMSNorm(cfg.d_model, eps=1e-6)
         self.dropout = nn.Dropout(cfg.dropout)
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
@@ -160,9 +148,9 @@ class DecoderBlock(nn.Module):
             head_dim=cfg.head_dim,
         )
         self.ffn = SwiGLU(cfg.d_model, cfg.ffn_hidden)
-        self.norm1 = RMSNorm(cfg.d_model)
-        self.norm2 = RMSNorm(cfg.d_model)
-        self.norm3 = RMSNorm(cfg.d_model)
+        self.norm1 = nn.RMSNorm(cfg.d_model, eps=1e-6)
+        self.norm2 = nn.RMSNorm(cfg.d_model, eps=1e-6)
+        self.norm3 = nn.RMSNorm(cfg.d_model, eps=1e-6)
         self.dropout = nn.Dropout(cfg.dropout)
 
     def forward(
@@ -188,7 +176,7 @@ class TransformerEncoderDecoder(nn.Module):
         self.decoder = nn.ModuleList(
             [DecoderBlock(cfg) for _ in range(cfg.n_decoder_layers)]
         )
-        self.norm = RMSNorm(cfg.d_model)
+        self.norm = nn.RMSNorm(cfg.d_model, eps=1e-6)
         self.output = (
             None if cfg.tie_embeddings else nn.Linear(cfg.d_model, cfg.vocab, bias=False)
         )
