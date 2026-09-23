@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
@@ -9,82 +9,82 @@ import yaml
 
 @dataclass
 class ModelConfig:
-    type: str = "encoder-decoder"
-    vocab: int = 32000
-    tie_embeddings: bool = True
-    d_model: int = 512
-    n_heads: int = 8
-    head_dim: int = 64
-    n_kv_heads_encoder: int = 8
-    n_kv_heads_decoder_self: int = 4
-    n_kv_heads_cross: int = 8
-    n_encoder_layers: int = 12
-    n_decoder_layers: int = 12
-    ffn: str = "swiglu"
-    ffn_hidden: int = 4096
-    norm: str = "rmsnorm"
-    qk_norm: bool = True
-    pos: str = "rope"
-    dropout: float = 0.1
-    max_len: int = 256
+    type: str
+    vocab: int
+    tie_embeddings: bool
+    d_model: int
+    n_heads: int
+    head_dim: int
+    n_kv_heads_encoder: int
+    n_kv_heads_decoder_self: int
+    n_kv_heads_cross: int
+    n_encoder_layers: int
+    n_decoder_layers: int
+    ffn: str
+    ffn_hidden: int
+    norm: str
+    qk_norm: bool
+    pos: str
+    dropout: float
+    max_len: int
 
 
 @dataclass
 class TokenizerConfig:
-    sp_model: str = "data/tokenizer/kk-ru-sp32k.model"
-    vocab_size: int = 32000
+    sp_model: str
+    vocab_size: int
 
 
 @dataclass
 class DataConfig:
-    train_tsv: str = "data/filtered/train.kk-ru.tsv"
-    eval_dev: str = "data/eval/flores_plus/dev.kk-ru.tsv"
-    eval_test: str = "data/eval/flores_plus/devtest.kk-ru.tsv"
+    train_tsv: str
+    eval_dev: str
+    eval_test: str
 
 
 @dataclass
 class TrainConfig:
-    precision: str = "bf16"
-    devices: int = 4
-    strategy: str = "ddp"
-    micro_batch_per_gpu: int = 16
-    grad_accum: int = 4
-    epochs: int = 3
-    optimizer: str = "adamw"
-    lr: float = 2.0e-4
-    warmup_steps: int = 2000
-    schedule: str = "cosine"
-    min_lr: float = 2.0e-5
-    weight_decay: float = 0.01
-    clip_grad_norm: float = 1.0
-    label_smoothing: float = 0.1
-    save_every: int = 2000
-    eval_every: int = 2000
-    max_steps: int | None = None
-    seed: int = 42
+    precision: str
+    devices: int
+    strategy: str
+    micro_batch_per_gpu: int
+    grad_accum: int
+    epochs: int
+    optimizer: str
+    lr: float
+    warmup_steps: int
+    schedule: str
+    min_lr: float
+    weight_decay: float
+    clip_grad_norm: float
+    label_smoothing: float
+    save_every: int
+    eval_every: int
+    max_steps: int | None
+    seed: int
 
 
 @dataclass
 class GenConfig:
-    beam: int = 5
-    max_len: int = 256
+    beam: int
+    max_len: int
 
 
 @dataclass
 class PathsConfig:
-    checkpoints: str = "checkpoints"
-    reports: str = "reports"
-    logs: str = "runs"
+    checkpoints: str
+    reports: str
+    logs: str
 
 
 @dataclass
 class Config:
-    model: ModelConfig = field(default_factory=ModelConfig)
-    tokenizer: TokenizerConfig = field(default_factory=TokenizerConfig)
-    data: DataConfig = field(default_factory=DataConfig)
-    train: TrainConfig = field(default_factory=TrainConfig)
-    gen: GenConfig = field(default_factory=GenConfig)
-    paths: PathsConfig = field(default_factory=PathsConfig)
+    model: ModelConfig
+    tokenizer: TokenizerConfig
+    data: DataConfig
+    train: TrainConfig
+    gen: GenConfig
+    paths: PathsConfig
 
 
 _SECTIONS = {
@@ -124,25 +124,34 @@ def _apply_overrides(cfg: Config, overrides: list[str]) -> None:
         setattr(obj, last, _coerce(getattr(obj, last), value))
 
 
+def _build_section(section_type: Any, name: str, data: Any, path: Path) -> Any:
+    if not isinstance(data, dict):
+        raise ValueError(f"section {name!r} must be a mapping in {path}")
+    allowed = {f.name for f in fields(section_type)}
+    for key in data:
+        if key not in allowed:
+            raise ValueError(f"unknown key {name}.{key} in {path}")
+    return section_type(**data)
+
+
 def load_config(path: str | Path, overrides: list[str] | None = None) -> Config:
     path = Path(path)
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(raw, dict):
         raise ValueError(f"config root must be a mapping: {path}")
-
-    cfg = Config()
-    for section, section_type in _SECTIONS.items():
+    for section in raw:
+        if section not in _SECTIONS:
+            raise ValueError(f"unknown section {section!r} in {path}")
+    for section in _SECTIONS:
         if section not in raw:
-            continue
-        data = raw[section]
-        if not isinstance(data, dict):
-            raise ValueError(f"section {section!r} must be a mapping in {path}")
-        target = getattr(cfg, section)
-        for key, value in data.items():
-            if not hasattr(target, key):
-                raise ValueError(f"unknown key {section}.{key} in {path}")
-            setattr(target, key, value)
+            raise ValueError(f"missing section {section!r} in {path}")
 
+    cfg = Config(
+        **{
+            name: _build_section(section_type, name, raw[name], path)
+            for name, section_type in _SECTIONS.items()
+        }
+    )
     if overrides:
         _apply_overrides(cfg, overrides)
     return cfg
