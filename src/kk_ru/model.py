@@ -165,7 +165,7 @@ class DecoderBlock(nn.Module):
         return x
 
 
-class TransformerEncoderDecoder(nn.Module):
+class KkRuModel(nn.Module):
 
     def __init__(self, cfg: ModelConfig):
         super().__init__()
@@ -200,8 +200,8 @@ class TransformerEncoderDecoder(nn.Module):
         return self.output(h)
 
 
-def build_model(cfg: ModelConfig) -> TransformerEncoderDecoder:
-    return TransformerEncoderDecoder(cfg)
+def build_model(cfg: ModelConfig) -> KkRuModel:
+    return KkRuModel(cfg)
 
 
 def count_params(model: nn.Module) -> int:
