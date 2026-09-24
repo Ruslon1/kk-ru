@@ -56,24 +56,36 @@ def beam_search(
     scores[:, 0] = 0.0
     finished = torch.zeros(bsz, beam, dtype=torch.bool, device=device)
 
-    for _ in range(max_len):
-        cur = seqs.shape[-1]
-        logits = model.decode(seqs.reshape(bsz * beam, cur), memory, src_mask_beams)
+    cache = None
+    for step in range(max_len):
+        tokens = seqs[:, :, -1:] if cache is not None else seqs
+        logits, cache = model.decode(
+            tokens.reshape(bsz * beam, -1),
+            memory,
+            src_mask_beams,
+            past_key_values=cache,
+            use_cache=True,
+        )
         logp = torch.log_softmax(logits[:, -1, :], dim=-1).view(bsz, beam, vocab)
         logp = logp.masked_fill(finished.unsqueeze(-1), -float("inf"))
-        logp[:, :, pad_id] = torch.where(finished, 0.0, logp[:, :, pad_id])
+        logp[:, :, eos_id] = torch.where(finished, 0.0, logp[:, :, eos_id])
 
         cand = scores.unsqueeze(-1) + logp
         top_scores, top_idx = cand.view(bsz, -1).topk(beam, dim=-1)
         prev_beam = top_idx // vocab
         token = top_idx % vocab
 
-        gathered = seqs.gather(1, prev_beam.unsqueeze(-1).expand(bsz, beam, cur))
+        current_len = seqs.shape[-1]
+        gathered = seqs.gather(1, prev_beam.unsqueeze(-1).expand(bsz, beam, current_len))
         seqs = torch.cat([gathered, token.unsqueeze(-1)], dim=-1)
+        flat_indices = (prev_beam + torch.arange(bsz, device=device).unsqueeze(1) * beam).reshape(-1)
+        cache = [(keys.index_select(0, flat_indices), values.index_select(0, flat_indices)) for keys, values in cache]
         scores = top_scores
         finished = finished.gather(1, prev_beam) | (token == eos_id)
+        if finished.all():
+            break
 
-    lengths = (seqs != pad_id).sum(dim=-1).float()
+    lengths = (seqs != pad_id).sum(dim=-1).clamp_min(1).float()
     norm = scores / lengths.pow(alpha)
     best = norm.argmax(dim=-1)
     return seqs[torch.arange(bsz), best].tolist()
@@ -103,7 +115,10 @@ def translate(
             src_ids[j, : len(ids)] = torch.tensor(ids, dtype=torch.long, device=device)
             src_mask[j, : len(ids)] = True
 
-        seqs = beam_search(model, src_ids, src_mask, tokenizer.bos_id, tokenizer.eos_id, pad_id, max_len, beam)
+        seqs = beam_search(
+            model, src_ids, src_mask, tokenizer.bos_id, tokenizer.eos_id,
+            pad_id, max_len, beam,
+        )
         for seq in seqs:
             hypotheses.append(tokenizer.decode(seq, skip_special=True).strip())
     return hypotheses
@@ -130,7 +145,8 @@ def compute_metrics(hypotheses: list[str], references: list[str], sources: list[
 
 
 def evaluate(cfg, tokenizer, model, split: str, device: torch.device, write: bool = False) -> dict:
-    path = cfg.data.eval_dev if split == "dev" else cfg.data.eval_test
+    paths = {"dev": cfg.data.eval_dev, "devtest": cfg.data.eval_test}
+    path = paths[split]
     sources, references = [], []
     for kk, ru in iter_pairs(path):
         sources.append(kk)
@@ -151,7 +167,9 @@ def main() -> None:
 
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
     model = build_model(cfg.model)
-    state = torch.load(args.checkpoint, map_location=device)
+    checkpoint = Path(args.checkpoint)
+    state_path = checkpoint / "model.pt" if checkpoint.is_dir() else checkpoint
+    state = torch.load(state_path, map_location=device)
     model.load_state_dict(state)
     model.to(device)
 
