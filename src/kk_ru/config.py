@@ -52,10 +52,10 @@ class TrainConfig:
     micro_batch_per_gpu: int
     grad_accum: int
     epochs: int
-    optimizer: str = "adamw"
+    optimizer: str
     lr: float
     warmup_steps: int
-    schedule: str = "cosine"
+    schedule: str
     min_lr: float
     weight_decay: float
     clip_grad_norm: float
