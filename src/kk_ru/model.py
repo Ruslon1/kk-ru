@@ -83,6 +83,7 @@ class Attention(nn.Module):
             past_k, past_v = past_key_value
             k = torch.cat((past_k, k), dim=2)
             v = torch.cat((past_v, v), dim=2)
+        present = (k, v)
         if self.n_kv_heads != self.n_heads:
             reps = self.n_heads // self.n_kv_heads
             k = k.repeat_interleave(reps, dim=1)
@@ -102,7 +103,7 @@ class Attention(nn.Module):
         out = out.transpose(1, 2).reshape(bsz, q_len, -1)
         result = self.wo(out)
         if use_cache:
-            return result, (k, v)
+            return result, present
         return result
 
 
