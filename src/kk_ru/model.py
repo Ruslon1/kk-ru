@@ -45,6 +45,7 @@ class Attention(nn.Module):
         use_rope: bool,
         qk_norm: bool,
         head_dim: int = 64,
+        max_len: int = 256,
     ):
         super().__init__()
         self.n_heads = n_heads
@@ -55,7 +56,7 @@ class Attention(nn.Module):
         self.wk = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.wv = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.wo = nn.Linear(n_heads * head_dim, d_model, bias=False)
-        self.rotary = RotaryEmbedding(head_dim) if use_rope else None
+        self.rotary = RotaryEmbedding(head_dim, max_len=max_len) if use_rope else None
         self.q_norm = nn.RMSNorm(head_dim, eps=1e-6) if qk_norm else None
         self.k_norm = nn.RMSNorm(head_dim, eps=1e-6) if qk_norm else None
 
@@ -88,10 +89,10 @@ class Attention(nn.Module):
             reps = self.n_heads // self.n_kv_heads
             k = k.repeat_interleave(reps, dim=1)
             v = v.repeat_interleave(reps, dim=1)
-        if mask is not None:
-            mask = mask.unsqueeze(1).unsqueeze(2)
-        is_causal = self.causal and past_key_value is None
-        if self.causal and past_key_value is not None:
+        if mask is not None and mask.ndim == 2:
+            mask = mask[:, None, None, :]
+        is_causal = self.causal and mask is None and past_key_value is None
+        if self.causal and not is_causal:
             query_positions = torch.arange(q_len, device=x.device) + past_len
             key_positions = torch.arange(k.shape[2], device=x.device)
             causal_mask = key_positions.unsqueeze(0) <= query_positions.unsqueeze(1)
@@ -131,6 +132,7 @@ class EncoderBlock(nn.Module):
             use_rope=cfg.pos == "rope",
             qk_norm=cfg.qk_norm,
             head_dim=cfg.head_dim,
+            max_len=cfg.max_len,
         )
         self.ffn = SwiGLU(cfg.d_model, cfg.ffn_hidden)
         self.norm1 = nn.RMSNorm(cfg.d_model, eps=1e-6)
@@ -155,6 +157,7 @@ class DecoderBlock(nn.Module):
             use_rope=cfg.pos == "rope",
             qk_norm=cfg.qk_norm,
             head_dim=cfg.head_dim,
+            max_len=cfg.max_len,
         )
         self.cross_attn = Attention(
             cfg.d_model,
@@ -176,11 +179,13 @@ class DecoderBlock(nn.Module):
         x: torch.Tensor,
         memory: torch.Tensor,
         src_mask: torch.Tensor | None = None,
+        tgt_mask: torch.Tensor | None = None,
         past_key_value: tuple[torch.Tensor, torch.Tensor] | None = None,
         use_cache: bool = False,
     ) -> torch.Tensor | tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         self_attn = self.self_attn(
-            self.norm1(x), past_key_value=past_key_value, use_cache=use_cache
+            self.norm1(x), mask=tgt_mask,
+            past_key_value=past_key_value, use_cache=use_cache
         )
         if use_cache:
             self_attn, present = self_attn
@@ -228,6 +233,7 @@ class KkRuModel(nn.Module):
         tgt_ids: torch.Tensor,
         memory: torch.Tensor,
         src_mask: torch.Tensor,
+        tgt_mask: torch.Tensor | None = None,
         past_key_values: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
         use_cache: bool = False,
     ) -> torch.Tensor | tuple[torch.Tensor, list[tuple[torch.Tensor, torch.Tensor]]]:
@@ -239,6 +245,7 @@ class KkRuModel(nn.Module):
                 h,
                 memory,
                 src_mask=src_mask,
+                tgt_mask=tgt_mask,
                 past_key_value=past,
                 use_cache=use_cache,
             )
@@ -261,9 +268,10 @@ class KkRuModel(nn.Module):
         src_ids: torch.Tensor,
         src_mask: torch.Tensor,
         tgt_ids: torch.Tensor,
+        tgt_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         memory = self.encode(src_ids, src_mask)
-        return self.decode(tgt_ids, memory, src_mask)
+        return self.decode(tgt_ids, memory, src_mask, tgt_mask=tgt_mask)
 
 
 def build_model(cfg: ModelConfig) -> KkRuModel:

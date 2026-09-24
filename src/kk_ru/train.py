@@ -130,7 +130,10 @@ def main() -> None:
             with accelerator.accumulate(model):
                 with accelerator.autocast():
                     logits = model(
-                        batch["src_ids"], batch["src_mask"], batch["tgt_ids"][:, :-1]
+                        batch["src_ids"],
+                        batch["src_mask"],
+                        batch["tgt_ids"][:, :-1],
+                        tgt_mask=batch["tgt_mask"][:, :-1],
                     )
                     loss = F.cross_entropy(
                         logits.reshape(-1, logits.shape[-1]),
