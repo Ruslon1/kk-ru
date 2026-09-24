@@ -185,8 +185,8 @@ def validate_config(cfg: Config) -> None:
             raise ValueError(f"model.{name} must be a positive divisor of model.n_heads")
     if model.max_len <= 0 or gen.max_len <= 0:
         raise ValueError("model.max_len and gen.max_len must be positive")
-    if train.micro_batch_per_gpu <= 0 or train.grad_accum <= 0:
-        raise ValueError("micro_batch_per_gpu and grad_accum must be positive")
+    if train.micro_batch_per_gpu <= 0 or train.grad_accum <= 0 or train.epochs <= 0:
+        raise ValueError("micro_batch_per_gpu, grad_accum, and epochs must be positive")
     if train.optimizer != "adamw":
         raise ValueError("only train.optimizer=adamw is supported")
     if train.schedule != "cosine":

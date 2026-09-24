@@ -15,7 +15,7 @@ from .config import load_config
 from .data import build_dataloaders
 from .eval import evaluate
 from .model import build_model, count_params
-from .tokenizer import load_tokenizer
+from .tokenizer import load_tokenizer, validate_vocab
 
 OVERFIT_LIMIT = 10_000
 LOG_EVERY = 50
@@ -55,13 +55,23 @@ def _checkpoint_path(root: Path, step: int) -> Path:
     return root / f"step-{step}"
 
 
-def _save_checkpoint(accelerator: Accelerator, model, root: Path, step: int) -> None:
+def _save_checkpoint(
+    accelerator: Accelerator,
+    model,
+    root: Path,
+    step: int,
+    epoch: int,
+    batch_index: int,
+) -> None:
     checkpoint = _checkpoint_path(root, step)
     accelerator.save_state(str(checkpoint))
     if accelerator.is_main_process:
         unwrapped = accelerator.unwrap_model(model)
         torch.save(unwrapped.state_dict(), checkpoint / "model.pt")
-        (checkpoint / "meta.json").write_text(json.dumps({"step": step}), encoding="utf-8")
+        (checkpoint / "meta.json").write_text(
+            json.dumps({"step": step, "epoch": epoch, "batch_index": batch_index}),
+            encoding="utf-8",
+        )
     accelerator.wait_for_everyone()
 
 
@@ -88,13 +98,18 @@ def _prune_checkpoints(root: Path, keep: int = 3) -> None:
         shutil.rmtree(checkpoint)
 
 
-def _load_step(checkpoint: str | None) -> int:
+def _load_resume_state(checkpoint: str | None) -> dict[str, int]:
     if checkpoint is None:
-        return 0
+        return {"step": 0, "epoch": 0, "batch_index": 0}
     metadata = Path(checkpoint) / "meta.json"
     if not metadata.exists():
         raise FileNotFoundError(f"checkpoint metadata is missing: {metadata}")
-    return int(json.loads(metadata.read_text(encoding="utf-8"))["step"])
+    state = json.loads(metadata.read_text(encoding="utf-8"))
+    return {
+        "step": int(state["step"]),
+        "epoch": int(state.get("epoch", 0)),
+        "batch_index": int(state.get("batch_index", 0)),
+    }
 
 
 def _set_loader_epoch(loader, epoch: int) -> None:
@@ -118,6 +133,7 @@ def main() -> None:
     accelerator.init_trackers("kk-ru", config={"config": str(args.config), "seed": cfg.train.seed})
 
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
+    validate_vocab(tokenizer, cfg.model.vocab)
     with accelerator.main_process_first():
         loaders = build_dataloaders(
             cfg, tokenizer, train_limit=OVERFIT_LIMIT if args.overfit else 0
@@ -127,27 +143,32 @@ def main() -> None:
     if cfg.train.compile:
         model = torch.compile(model)
     optimizer = build_optimizer(model, cfg.train)
+    model, optimizer, train_loader = accelerator.prepare(model, optimizer, train_loader)
     steps_per_epoch = max(1, math.ceil(len(train_loader) / cfg.train.grad_accum))
     total_steps = cfg.train.max_steps or steps_per_epoch * cfg.train.epochs
     scheduler = build_scheduler(optimizer, cfg.train, total_steps)
-    model, optimizer, train_loader, scheduler = accelerator.prepare(model, optimizer, train_loader, scheduler)
+    scheduler = accelerator.prepare(scheduler)
 
-    start_step = _load_step(args.resume)
+    resume_state = _load_resume_state(args.resume)
     if args.resume:
         accelerator.load_state(args.resume)
 
     accelerator.print(f"model params: {count_params(model):,}")
     accelerator.print(f"train batches/rank: {len(train_loader)} | total steps: {total_steps}")
     optimizer.zero_grad(set_to_none=True)
-    global_step = start_step
+    global_step = resume_state["step"]
     model.train()
     save_root = Path(cfg.paths.checkpoints)
     save_root.mkdir(parents=True, exist_ok=True)
     best_spbleu = -float("inf")
 
-    for epoch in range(cfg.train.epochs):
+    resume_epoch = resume_state["epoch"]
+    resume_batch = resume_state["batch_index"]
+    for epoch in range(resume_epoch, cfg.train.epochs):
         _set_loader_epoch(train_loader, epoch)
-        for batch in train_loader:
+        for batch_index, batch in enumerate(train_loader):
+            if epoch == resume_epoch and batch_index < resume_batch:
+                continue
             if global_step >= total_steps:
                 break
             batch = {
@@ -186,7 +207,9 @@ def main() -> None:
                             f"loss {loss.item():.4f} lr {learning_rate:.2e}"
                         )
                     if cfg.train.save_every and global_step % cfg.train.save_every == 0:
-                        _save_checkpoint(accelerator, model, save_root, global_step)
+                        _save_checkpoint(
+                            accelerator, model, save_root, global_step, epoch, batch_index + 1
+                        )
                         if accelerator.is_main_process:
                             _prune_checkpoints(save_root)
                     if cfg.train.eval_every and global_step % cfg.train.eval_every == 0:
@@ -208,7 +231,7 @@ def main() -> None:
         if global_step >= total_steps:
             break
 
-    _save_checkpoint(accelerator, model, save_root, global_step)
+    _save_checkpoint(accelerator, model, save_root, global_step, epoch + 1, 0)
     if accelerator.is_main_process:
         accelerator.print(f"done. final checkpoint at {_checkpoint_path(save_root, global_step)}")
     accelerator.end_training()
