@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import urllib.error
 from pathlib import Path
 
 import torch
@@ -18,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split", type=str, default="devtest", choices=["dev", "devtest"])
     parser.add_argument("--opts", nargs="*", default=None)
     parser.add_argument("--comet-checkpoint", default=None)
+    parser.add_argument("--spbleu", action="store_true", help="compute FLORES spBLEU; may download a tokenizer")
     return parser.parse_args()
 
 
@@ -129,6 +131,7 @@ def compute_metrics(
     references: list[str],
     sources: list[str] | None = None,
     comet_checkpoint: str | None = None,
+    compute_spbleu: bool = False,
 ) -> dict:
     import sacrebleu
 
@@ -136,8 +139,14 @@ def compute_metrics(
         "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
         "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
         "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
-        "spbleu": sacrebleu.corpus_bleu(hypotheses, [references], tokenize="flores200").score,
     }
+    if compute_spbleu:
+        try:
+            metrics["spbleu"] = sacrebleu.corpus_bleu(
+                hypotheses, [references], tokenize="flores200"
+            ).score
+        except (urllib.error.URLError, TimeoutError, OSError) as error:
+            print(f"warning: spBLEU skipped because FLORES tokenizer is unavailable: {error}")
     if comet_checkpoint is not None:
         if sources is None:
             raise ValueError("COMET requires source sentences")
@@ -154,6 +163,7 @@ def compute_metrics(
 def evaluate(
     cfg, tokenizer, model, split: str, device: torch.device,
     write: bool = False, comet_checkpoint: str | None = None,
+    compute_spbleu: bool = False,
 ) -> dict:
     paths = {"dev": cfg.data.eval_dev, "devtest": cfg.data.eval_test}
     path = paths[split]
@@ -162,7 +172,9 @@ def evaluate(
         sources.append(kk)
         references.append(ru)
     hypotheses = translate(model, tokenizer, sources, device, cfg.gen.beam, cfg.gen.max_len)
-    metrics = compute_metrics(hypotheses, references, sources, comet_checkpoint)
+    metrics = compute_metrics(
+        hypotheses, references, sources, comet_checkpoint, compute_spbleu
+    )
     if write:
         out = Path(cfg.paths.reports) / f"{split}.hyp.txt"
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -186,6 +198,7 @@ def main() -> None:
     metrics = evaluate(
         cfg, tokenizer, model, args.split, device,
         write=True, comet_checkpoint=args.comet_checkpoint,
+        compute_spbleu=args.spbleu,
     )
     for name, value in metrics.items():
         print(f"{name}: {value:.2f}")

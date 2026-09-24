@@ -197,8 +197,9 @@ def main() -> None:
                             raw.train()
                             accelerator.log({f"dev/{name}": value for name, value in metrics.items()}, step=global_step)
                             _save_export(accelerator, model, save_root, "latest", global_step, metrics)
-                            if metrics["spbleu"] > best_spbleu:
-                                best_spbleu = metrics["spbleu"]
+                            selection_score = metrics.get("spbleu", metrics["chrf++"])
+                            if selection_score > best_spbleu:
+                                best_spbleu = selection_score
                                 _save_export(accelerator, model, save_root, "best", global_step, metrics)
                             accelerator.print(
                                 f"dev @ step {global_step}: bleu {metrics['bleu']:.2f} chrf {metrics['chrf']:.2f}"
