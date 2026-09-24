@@ -73,6 +73,14 @@ def _load_step(checkpoint: str | None) -> int:
     return int(json.loads(metadata.read_text(encoding="utf-8"))["step"])
 
 
+def _set_loader_epoch(loader, epoch: int) -> None:
+    sampler = getattr(loader, "batch_sampler", None)
+    sampler = getattr(sampler, "batch_sampler", sampler)
+    sampler = getattr(sampler, "sampler", sampler)
+    if hasattr(sampler, "set_epoch"):
+        sampler.set_epoch(epoch)
+
+
 def main() -> None:
     args = parse_args()
     cfg = load_config(args.config, overrides=args.opts)
@@ -86,13 +94,10 @@ def main() -> None:
     accelerator.init_trackers("kk-ru", config={"config": str(args.config), "seed": cfg.train.seed})
 
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
-    loaders = build_dataloaders(
-        cfg,
-        tokenizer,
-        rank=accelerator.process_index,
-        world_size=accelerator.num_processes,
-        train_limit=OVERFIT_LIMIT if args.overfit else 0,
-    )
+    with accelerator.main_process_first():
+        loaders = build_dataloaders(
+            cfg, tokenizer, train_limit=OVERFIT_LIMIT if args.overfit else 0
+        )
     train_loader = loaders["train"]
     model = build_model(cfg.model)
     optimizer = build_optimizer(model, cfg.train)
@@ -114,18 +119,25 @@ def main() -> None:
     save_root.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(cfg.train.epochs):
+        _set_loader_epoch(train_loader, epoch)
         for batch in train_loader:
             if global_step >= total_steps:
                 break
-            batch = {key: value.to(accelerator.device) for key, value in batch.items()}
+            batch = {
+                key: value.to(accelerator.device, non_blocking=True)
+                for key, value in batch.items()
+            }
             with accelerator.accumulate(model):
-                logits = model(batch["src_ids"], batch["src_mask"], batch["tgt_ids"][:, :-1])
-                loss = F.cross_entropy(
-                    logits.reshape(-1, logits.shape[-1]),
-                    batch["labels"].reshape(-1),
-                    ignore_index=tokenizer.pad_id,
-                    label_smoothing=cfg.train.label_smoothing,
-                )
+                with accelerator.autocast():
+                    logits = model(
+                        batch["src_ids"], batch["src_mask"], batch["tgt_ids"][:, :-1]
+                    )
+                    loss = F.cross_entropy(
+                        logits.reshape(-1, logits.shape[-1]),
+                        batch["labels"].reshape(-1),
+                        ignore_index=tokenizer.pad_id,
+                        label_smoothing=cfg.train.label_smoothing,
+                    )
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
                     accelerator.clip_grad_norm_(model.parameters(), cfg.train.clip_grad_norm)
