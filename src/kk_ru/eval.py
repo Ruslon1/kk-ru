@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint", type=str, required=True, help="path to model checkpoint")
     parser.add_argument("--split", type=str, default="devtest", choices=["dev", "devtest"])
     parser.add_argument("--opts", nargs="*", default=None)
+    parser.add_argument("--comet-checkpoint", default=None)
     return parser.parse_args()
 
 
@@ -107,7 +108,7 @@ def translate(
 
     for i in range(0, len(sources), batch_size):
         chunk = sources[i : i + batch_size]
-        encoded = [tokenizer.encode(s, add_bos=True)[:max_len] for s in chunk]
+        encoded = [tokenizer.encode(s, add_bos=True)[:tokenizer.max_len] for s in chunk]
         longest = max(len(x) for x in encoded)
         src_ids = torch.full((len(chunk), longest), pad_id, dtype=torch.long, device=device)
         src_mask = torch.zeros((len(chunk), longest), dtype=torch.bool, device=device)
@@ -124,27 +125,37 @@ def translate(
     return hypotheses
 
 
-def compute_metrics(hypotheses: list[str], references: list[str], sources: list[str] | None = None) -> dict:
+def compute_metrics(
+    hypotheses: list[str],
+    references: list[str],
+    sources: list[str] | None = None,
+    comet_checkpoint: str | None = None,
+) -> dict:
     import sacrebleu
 
     metrics = {
         "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
         "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
+        "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
+        "spbleu": sacrebleu.corpus_bleu(hypotheses, [references], tokenize="flores200").score,
     }
-    if sources is not None:
-        try:
-            from comet import download_model, load_from_checkpoint
+    if comet_checkpoint is not None:
+        if sources is None:
+            raise ValueError("COMET requires source sentences")
+        from comet import load_from_checkpoint
 
-            model_path = download_model("Unbabel/wmt22-comet-da")
-            comet_model = load_from_checkpoint(model_path)
-            data = [{"src": s, "mt": h, "ref": r} for s, h, r in zip(sources, hypotheses, references)]
-            metrics["comet"] = comet_model.predict(data, batch_size=8, gpus=1)["system_score"]
-        except Exception:
-            pass
+        comet_model = load_from_checkpoint(comet_checkpoint)
+        data = [{"src": s, "mt": h, "ref": r} for s, h, r in zip(sources, hypotheses, references)]
+        metrics["comet"] = comet_model.predict(
+            data, batch_size=8, gpus=int(torch.cuda.is_available())
+        )["system_score"]
     return metrics
 
 
-def evaluate(cfg, tokenizer, model, split: str, device: torch.device, write: bool = False) -> dict:
+def evaluate(
+    cfg, tokenizer, model, split: str, device: torch.device,
+    write: bool = False, comet_checkpoint: str | None = None,
+) -> dict:
     paths = {"dev": cfg.data.eval_dev, "devtest": cfg.data.eval_test}
     path = paths[split]
     sources, references = [], []
@@ -152,7 +163,7 @@ def evaluate(cfg, tokenizer, model, split: str, device: torch.device, write: boo
         sources.append(kk)
         references.append(ru)
     hypotheses = translate(model, tokenizer, sources, device, cfg.gen.beam, cfg.gen.max_len)
-    metrics = compute_metrics(hypotheses, references, sources)
+    metrics = compute_metrics(hypotheses, references, sources, comet_checkpoint)
     if write:
         out = Path(cfg.paths.reports) / f"{split}.hyp.txt"
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -173,7 +184,10 @@ def main() -> None:
     model.load_state_dict(state)
     model.to(device)
 
-    metrics = evaluate(cfg, tokenizer, model, args.split, device, write=True)
+    metrics = evaluate(
+        cfg, tokenizer, model, args.split, device,
+        write=True, comet_checkpoint=args.comet_checkpoint,
+    )
     for name, value in metrics.items():
         print(f"{name}: {value:.2f}")
 

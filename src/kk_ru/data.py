@@ -13,6 +13,8 @@ from torch.utils.data import Dataset, Sampler
 
 from .config import Config
 
+CACHE_VERSION = 2
+
 
 def iter_pairs(tsv_path: str) -> Iterator[tuple[str, str]]:
     with open(tsv_path, encoding="utf-8") as file:
@@ -43,7 +45,7 @@ def _build_mmap_cache(tsv_path: str, tokenizer, max_len: int, cache_dir: Path) -
     with (cache_dir / "src.bin").open("wb") as src_file, (cache_dir / "tgt.bin").open("wb") as tgt_file:
         for kk, ru in iter_pairs(tsv_path):
             src_ids = tokenizer.encode(kk, add_bos=True)[:max_len]
-            tgt_ids = tokenizer.encode(ru, add_eos=True)[:max_len]
+            tgt_ids = tokenizer.encode(ru, add_bos=True, add_eos=True)[:max_len]
             if tgt_ids[-1:] != [tokenizer.eos_id]:
                 tgt_ids[-1] = tokenizer.eos_id
             np.asarray(src_ids, dtype=np.int32).tofile(src_file)
@@ -54,7 +56,7 @@ def _build_mmap_cache(tsv_path: str, tokenizer, max_len: int, cache_dir: Path) -
     np.save(cache_dir / "src_offsets.npy", np.asarray(src_offsets, dtype=np.int64))
     np.save(cache_dir / "tgt_offsets.npy", np.asarray(tgt_offsets, dtype=np.int64))
     (cache_dir / "meta.json").write_text(
-        json.dumps({"count": count, "max_len": max_len}), encoding="utf-8"
+        json.dumps({"count": count, "max_len": max_len, "version": CACHE_VERSION}), encoding="utf-8"
     )
     final_dir = Path(str(cache_dir).split(".tmp-", 1)[0])
     if final_dir.exists():
@@ -80,6 +82,12 @@ class TranslationDataset(Dataset):
             raise FileNotFoundError(f"token cache is missing: {cache_dir}")
 
         meta = json.loads((cache_dir / "meta.json").read_text(encoding="utf-8"))
+        if meta.get("version") != CACHE_VERSION:
+            if not cache:
+                raise ValueError(f"token cache {cache_dir} has unsupported version")
+            shutil.rmtree(cache_dir)
+            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir)
+            meta = json.loads((cache_dir / "meta.json").read_text(encoding="utf-8"))
         if meta["max_len"] != max_len:
             raise ValueError(f"token cache {cache_dir} was built with max_len={meta['max_len']}, expected {max_len}")
         self.src_offsets = np.load(cache_dir / "src_offsets.npy", mmap_mode="r")
@@ -95,7 +103,7 @@ class TranslationDataset(Dataset):
             if index >= limit:
                 break
             src.append(tokenizer.encode(kk, add_bos=True)[:max_len])
-            target = tokenizer.encode(ru, add_eos=True)[:max_len]
+            target = tokenizer.encode(ru, add_bos=True, add_eos=True)[:max_len]
             if target[-1:] != [tokenizer.eos_id]:
                 target[-1] = tokenizer.eos_id
             tgt.append(target)
@@ -160,15 +168,18 @@ def collate_fn(batch: list[tuple[list[int], list[int]]], pad_id: int) -> dict:
     src_ids = torch.full((len(batch), max(src_lens)), pad_id, dtype=torch.long)
     tgt_ids = torch.full((len(batch), max(tgt_lens)), pad_id, dtype=torch.long)
     src_mask = torch.zeros_like(src_ids, dtype=torch.bool)
+    tgt_mask = torch.zeros_like(tgt_ids, dtype=torch.bool)
     for index, (src, tgt) in enumerate(batch):
         src_ids[index, : len(src)] = torch.tensor(src)
         tgt_ids[index, : len(tgt)] = torch.tensor(tgt)
         src_mask[index, : len(src)] = True
+        tgt_mask[index, : len(tgt)] = True
     return {
         "src_ids": src_ids,
         "src_mask": src_mask,
         "tgt_ids": tgt_ids,
         "labels": tgt_ids[:, 1:].clone(),
+        "tgt_mask": tgt_mask,
     }
 
 
