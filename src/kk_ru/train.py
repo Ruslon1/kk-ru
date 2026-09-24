@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import shutil
 from pathlib import Path
 
 import torch
@@ -64,6 +65,26 @@ def _save_checkpoint(accelerator: Accelerator, model, root: Path, step: int) -> 
     accelerator.wait_for_everyone()
 
 
+def _save_export(accelerator: Accelerator, model, root: Path, name: str, step: int, metrics: dict) -> None:
+    if not accelerator.is_main_process:
+        return
+    export_dir = root / name
+    export_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(accelerator.unwrap_model(model).state_dict(), export_dir / "model.pt")
+    (export_dir / "meta.json").write_text(
+        json.dumps({"step": step, "metrics": metrics}, indent=2), encoding="utf-8"
+    )
+
+
+def _prune_checkpoints(root: Path, keep: int = 3) -> None:
+    checkpoints = sorted(
+        (path for path in root.glob("step-*") if path.is_dir()),
+        key=lambda path: int(path.name.removeprefix("step-")),
+    )
+    for checkpoint in checkpoints[:-keep]:
+        shutil.rmtree(checkpoint)
+
+
 def _load_step(checkpoint: str | None) -> int:
     if checkpoint is None:
         return 0
@@ -100,6 +121,8 @@ def main() -> None:
         )
     train_loader = loaders["train"]
     model = build_model(cfg.model)
+    if cfg.train.compile:
+        model = torch.compile(model)
     optimizer = build_optimizer(model, cfg.train)
     steps_per_epoch = max(1, math.ceil(len(train_loader) / cfg.train.grad_accum))
     total_steps = cfg.train.max_steps or steps_per_epoch * cfg.train.epochs
@@ -117,6 +140,7 @@ def main() -> None:
     model.train()
     save_root = Path(cfg.paths.checkpoints)
     save_root.mkdir(parents=True, exist_ok=True)
+    best_spbleu = -float("inf")
 
     for epoch in range(cfg.train.epochs):
         _set_loader_epoch(train_loader, epoch)
@@ -160,6 +184,8 @@ def main() -> None:
                         )
                     if cfg.train.save_every and global_step % cfg.train.save_every == 0:
                         _save_checkpoint(accelerator, model, save_root, global_step)
+                        if accelerator.is_main_process:
+                            _prune_checkpoints(save_root)
                     if cfg.train.eval_every and global_step % cfg.train.eval_every == 0:
                         accelerator.wait_for_everyone()
                         if accelerator.is_main_process and "dev" in loaders:
@@ -167,6 +193,10 @@ def main() -> None:
                             metrics = evaluate(cfg, tokenizer, raw, "dev", accelerator.device)
                             raw.train()
                             accelerator.log({f"dev/{name}": value for name, value in metrics.items()}, step=global_step)
+                            _save_export(accelerator, model, save_root, "latest", global_step, metrics)
+                            if metrics["spbleu"] > best_spbleu:
+                                best_spbleu = metrics["spbleu"]
+                                _save_export(accelerator, model, save_root, "best", global_step, metrics)
                             accelerator.print(
                                 f"dev @ step {global_step}: bleu {metrics['bleu']:.2f} chrf {metrics['chrf']:.2f}"
                             )

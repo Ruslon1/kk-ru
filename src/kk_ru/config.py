@@ -49,15 +49,13 @@ class DataConfig:
 @dataclass
 class TrainConfig:
     precision: str
-    devices: int
-    strategy: str
     micro_batch_per_gpu: int
     grad_accum: int
     epochs: int
-    optimizer: str
+    optimizer: str = "adamw"
     lr: float
     warmup_steps: int
-    schedule: str
+    schedule: str = "cosine"
     min_lr: float
     weight_decay: float
     clip_grad_norm: float
@@ -181,6 +179,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("model.max_len and gen.max_len must be positive")
     if train.micro_batch_per_gpu <= 0 or train.grad_accum <= 0:
         raise ValueError("micro_batch_per_gpu and grad_accum must be positive")
+    if train.optimizer != "adamw":
+        raise ValueError("only train.optimizer=adamw is supported")
+    if train.schedule != "cosine":
+        raise ValueError("only train.schedule=cosine is supported")
     if train.lr <= 0 or train.min_lr < 0 or train.min_lr > train.lr:
         raise ValueError("train.min_lr must be in [0, train.lr]")
     if not 0 <= train.label_smoothing < 1:
