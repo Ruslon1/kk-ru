@@ -70,7 +70,10 @@ def _save_export(accelerator: Accelerator, model, root: Path, name: str, step: i
         return
     export_dir = root / name
     export_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(accelerator.unwrap_model(model).state_dict(), export_dir / "model.pt")
+    unwrapped = accelerator.unwrap_model(model)
+    if hasattr(unwrapped, "_orig_mod"):
+        unwrapped = unwrapped._orig_mod
+    torch.save(unwrapped.state_dict(), export_dir / "model.pt")
     (export_dir / "meta.json").write_text(
         json.dumps({"step": step, "metrics": metrics}, indent=2), encoding="utf-8"
     )
