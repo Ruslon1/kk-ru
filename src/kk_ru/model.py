@@ -22,10 +22,10 @@ class RotaryEmbedding(nn.Module):
         self.register_buffer("cos", emb.cos())
         self.register_buffer("sin", emb.sin())
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, offset: int = 0) -> torch.Tensor:
         seq = x.shape[-2]
-        cos = self.cos[:seq].to(x.dtype)
-        sin = self.sin[:seq].to(x.dtype)
+        cos = self.cos[offset : offset + seq].to(x.dtype)
+        sin = self.sin[offset : offset + seq].to(x.dtype)
         half = self.head_dim // 2
         x1 = x[..., :half]
         x2 = x[..., half:]
@@ -64,7 +64,9 @@ class Attention(nn.Module):
         x: torch.Tensor,
         kv: torch.Tensor | None = None,
         mask: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+        past_key_value: tuple[torch.Tensor, torch.Tensor] | None = None,
+        use_cache: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         bsz, q_len, _ = x.shape
         q = self.wq(x).view(bsz, q_len, self.n_heads, self.head_dim).transpose(1, 2)
         src = x if kv is None else kv
@@ -73,20 +75,35 @@ class Attention(nn.Module):
         if self.q_norm is not None:
             q = self.q_norm(q)
             k = self.k_norm(k)
+        past_len = 0 if past_key_value is None else past_key_value[0].shape[2]
         if self.rotary is not None:
-            q = self.rotary(q)
-            k = self.rotary(k)
+            q = self.rotary(q, offset=past_len)
+            k = self.rotary(k, offset=past_len)
+        if past_key_value is not None:
+            past_k, past_v = past_key_value
+            k = torch.cat((past_k, k), dim=2)
+            v = torch.cat((past_v, v), dim=2)
         if self.n_kv_heads != self.n_heads:
             reps = self.n_heads // self.n_kv_heads
             k = k.repeat_interleave(reps, dim=1)
             v = v.repeat_interleave(reps, dim=1)
         if mask is not None:
             mask = mask.unsqueeze(1).unsqueeze(2)
+        is_causal = self.causal and past_key_value is None
+        if self.causal and past_key_value is not None:
+            query_positions = torch.arange(q_len, device=x.device) + past_len
+            key_positions = torch.arange(k.shape[2], device=x.device)
+            causal_mask = key_positions.unsqueeze(0) <= query_positions.unsqueeze(1)
+            causal_mask = causal_mask.unsqueeze(0).unsqueeze(0)
+            mask = causal_mask if mask is None else mask & causal_mask
         out = F.scaled_dot_product_attention(
-            q, k, v, attn_mask=mask, is_causal=self.causal, dropout_p=0.0
+            q, k, v, attn_mask=mask, is_causal=is_causal, dropout_p=0.0
         )
         out = out.transpose(1, 2).reshape(bsz, q_len, -1)
-        return self.wo(out)
+        result = self.wo(out)
+        if use_cache:
+            return result, (k, v)
+        return result
 
 
 class SwiGLU(nn.Module):
@@ -158,10 +175,19 @@ class DecoderBlock(nn.Module):
         x: torch.Tensor,
         memory: torch.Tensor,
         src_mask: torch.Tensor | None = None,
-    ) -> torch.Tensor:
-        x = x + self.dropout(self.self_attn(self.norm1(x)))
+        past_key_value: tuple[torch.Tensor, torch.Tensor] | None = None,
+        use_cache: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        self_attn = self.self_attn(
+            self.norm1(x), past_key_value=past_key_value, use_cache=use_cache
+        )
+        if use_cache:
+            self_attn, present = self_attn
+        x = x + self.dropout(self_attn)
         x = x + self.dropout(self.cross_attn(self.norm2(x), kv=memory, mask=src_mask))
         x = x + self.dropout(self.ffn(self.norm3(x)))
+        if use_cache:
+            return x, present
         return x
 
 
@@ -196,14 +222,38 @@ class KkRuModel(nn.Module):
             h = block(h, mask=src_mask)
         return h
 
-    def decode(self, tgt_ids: torch.Tensor, memory: torch.Tensor, src_mask: torch.Tensor) -> torch.Tensor:
+    def decode(
+        self,
+        tgt_ids: torch.Tensor,
+        memory: torch.Tensor,
+        src_mask: torch.Tensor,
+        past_key_values: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
+        use_cache: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, list[tuple[torch.Tensor, torch.Tensor]]]:
         h = self.embed_tokens(tgt_ids)
-        for block in self.decoder:
-            h = block(h, memory, src_mask=src_mask)
+        presents = []
+        for index, block in enumerate(self.decoder):
+            past = None if past_key_values is None else past_key_values[index]
+            block_output = block(
+                h,
+                memory,
+                src_mask=src_mask,
+                past_key_value=past,
+                use_cache=use_cache,
+            )
+            if use_cache:
+                h, present = block_output
+                presents.append(present)
+            else:
+                h = block_output
         h = self.norm(h)
         if self.output is None:
-            return h @ self.embed_tokens.weight.t()
-        return self.output(h)
+            logits = h @ self.embed_tokens.weight.t()
+        else:
+            logits = self.output(h)
+        if use_cache:
+            return logits, presents
+        return logits
 
     def forward(
         self,
