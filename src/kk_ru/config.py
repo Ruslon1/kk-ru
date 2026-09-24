@@ -101,6 +101,10 @@ _SECTIONS = {
 
 
 def _coerce(current: Any, value: str) -> Any:
+    if value.strip().lower() in ("none", "null"):
+        if current is None:
+            return None
+        raise ValueError(f"cannot set non-null config value to {value!r}")
     if isinstance(current, bool):
         return value.lower() in ("1", "true", "yes", "on")
     if isinstance(current, int):
@@ -108,7 +112,7 @@ def _coerce(current: Any, value: str) -> Any:
     if isinstance(current, float):
         return float(value)
     if current is None:
-        return value
+        raise ValueError(f"cannot infer type for null config value {value!r}")
     return type(current)(value)
 
 
@@ -166,6 +170,10 @@ def validate_config(cfg: Config) -> None:
     train = cfg.train
     data = cfg.data
     gen = cfg.gen
+    if model.vocab <= 0 or cfg.tokenizer.vocab_size <= 0:
+        raise ValueError("model.vocab and tokenizer.vocab_size must be positive")
+    if model.vocab != cfg.tokenizer.vocab_size:
+        raise ValueError("model.vocab must equal tokenizer.vocab_size")
     if model.d_model != model.n_heads * model.head_dim:
         raise ValueError("model.d_model must equal model.n_heads * model.head_dim")
     for name, heads in (
