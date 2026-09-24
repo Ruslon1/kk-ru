@@ -112,7 +112,10 @@ def _coerce(current: Any, value: str) -> Any:
     if isinstance(current, float):
         return float(value)
     if current is None:
-        raise ValueError(f"cannot infer type for null config value {value!r}")
+        try:
+            return int(value)
+        except ValueError as error:
+            raise ValueError(f"cannot infer type for null config value {value!r}") from error
     return type(current)(value)
 
 

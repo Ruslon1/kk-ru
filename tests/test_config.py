@@ -21,6 +21,10 @@ def test_null_override_for_non_nullable_field_fails():
         _coerce(0, "null")
 
 
+def test_nullable_integer_override_can_be_set():
+    assert _coerce(None, "100") == 100
+
+
 def test_config_rejects_vocab_mismatch(tmp_path: Path):
     config = Path("configs/p0.yaml").read_text(encoding="utf-8").replace(
         "vocab_size: 32000", "vocab_size: 16000"
