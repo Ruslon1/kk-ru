@@ -62,3 +62,10 @@ class Tokenizer:
 
 def load_tokenizer(sp_model_path: str, max_len: int = 256) -> Tokenizer:
     return Tokenizer(sp_model_path, max_len=max_len)
+
+
+def validate_vocab(tokenizer: Tokenizer, expected_vocab: int) -> None:
+    if tokenizer.vocab_size != expected_vocab:
+        raise ValueError(
+            f"tokenizer vocabulary has {tokenizer.vocab_size} pieces, expected {expected_vocab}"
+        )
