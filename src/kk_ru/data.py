@@ -20,7 +20,7 @@ def iter_pairs(tsv_path: str) -> Iterator[tuple[str, str]]:
             yield parts[0], parts[1]
 
 
-def _tokenize_stream(tsv_path: str, tokenizer, max_len: int, chunk: int = 200_000):
+def _tokenize_stream(tsv_path: str, tokenizer, max_len: int, chunk: int = 200_000, limit: int = 0):
     src_parts, tgt_parts = [], []
     src_len_parts, tgt_len_parts = [], []
     cur_src, cur_tgt = [], []
@@ -36,6 +36,7 @@ def _tokenize_stream(tsv_path: str, tokenizer, max_len: int, chunk: int = 200_00
             cur_src, cur_tgt = [], []
             cur_sl, cur_tl = [], []
 
+    seen = 0
     for kk, ru in iter_pairs(tsv_path):
         s = tokenizer.encode(kk, add_bos=True)[:max_len]
         t = tokenizer.encode(ru, add_eos=True)[:max_len]
@@ -43,8 +44,11 @@ def _tokenize_stream(tsv_path: str, tokenizer, max_len: int, chunk: int = 200_00
         cur_tgt.extend(t)
         cur_sl.append(len(s))
         cur_tl.append(len(t))
+        seen += 1
         if len(cur_sl) >= chunk:
             flush()
+        if limit and seen >= limit:
+            break
     flush()
 
     empty = np.array([], dtype=np.int32)
@@ -62,10 +66,10 @@ def _tokenize_stream(tsv_path: str, tokenizer, max_len: int, chunk: int = 200_00
 class TranslationDataset(Dataset):
     """Tokenized bitext stored as flat int32 arrays with offset indexes."""
 
-    def __init__(self, tsv_path: str, tokenizer, max_len: int, cache: bool = True):
+    def __init__(self, tsv_path: str, tokenizer, max_len: int, cache: bool = True, limit: int = 0):
         self.max_len = max_len
         cache_path = Path(str(tsv_path) + ".tok.npz")
-        if cache and cache_path.exists():
+        if cache and not limit and cache_path.exists():
             z = np.load(cache_path)
             self.src_flat = z["src_flat"]
             self.src_off = z["src_off"]
@@ -75,7 +79,7 @@ class TranslationDataset(Dataset):
             self.tgt_lens = z["tgt_lens"]
         else:
             self.src_flat, self.src_off, self.src_lens, self.tgt_flat, self.tgt_off, self.tgt_lens = _tokenize_stream(
-                tsv_path, tokenizer, max_len
+                tsv_path, tokenizer, max_len, limit=limit
             )
             if cache:
                 np.savez_compressed(
@@ -187,11 +191,11 @@ def _make_loader(dataset: TranslationDataset, batch_size: int, tokenizer, shuffl
     )
 
 
-def build_dataloaders(cfg: Config, tokenizer, rank: int = 0, world_size: int = 1):
+def build_dataloaders(cfg: Config, tokenizer, rank: int = 0, world_size: int = 1, train_limit: int = 0):
     from torch.utils.data import DataLoader
 
     train = _make_loader(
-        TranslationDataset(cfg.data.train_tsv, tokenizer, cfg.model.max_len),
+        TranslationDataset(cfg.data.train_tsv, tokenizer, cfg.model.max_len, limit=train_limit),
         cfg.train.micro_batch_per_gpu,
         tokenizer,
         shuffle=True,

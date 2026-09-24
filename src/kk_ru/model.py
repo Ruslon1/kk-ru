@@ -180,17 +180,23 @@ class KkRuModel(nn.Module):
         self.output = (
             None if cfg.tie_embeddings else nn.Linear(cfg.d_model, cfg.vocab, bias=False)
         )
+        self.apply(self._init_weights)
 
-    def forward(
-        self,
-        src_ids: torch.Tensor,
-        src_mask: torch.Tensor,
-        tgt_ids: torch.Tensor,
-    ) -> torch.Tensor:
+    def _init_weights(self, module: nn.Module) -> None:
+        if isinstance(module, nn.Linear):
+            module.weight.data.normal_(mean=0.0, std=0.02)
+            if module.bias is not None:
+                module.bias.data.zero_()
+        elif isinstance(module, nn.Embedding):
+            module.weight.data.normal_(mean=0.0, std=0.02)
+
+    def encode(self, src_ids: torch.Tensor, src_mask: torch.Tensor) -> torch.Tensor:
         h = self.embed_tokens(src_ids)
         for block in self.encoder:
             h = block(h, mask=src_mask)
-        memory = h
+        return h
+
+    def decode(self, tgt_ids: torch.Tensor, memory: torch.Tensor, src_mask: torch.Tensor) -> torch.Tensor:
         h = self.embed_tokens(tgt_ids)
         for block in self.decoder:
             h = block(h, memory, src_mask=src_mask)
@@ -198,6 +204,15 @@ class KkRuModel(nn.Module):
         if self.output is None:
             return h @ self.embed_tokens.weight.t()
         return self.output(h)
+
+    def forward(
+        self,
+        src_ids: torch.Tensor,
+        src_mask: torch.Tensor,
+        tgt_ids: torch.Tensor,
+    ) -> torch.Tensor:
+        memory = self.encode(src_ids, src_mask)
+        return self.decode(tgt_ids, memory, src_mask)
 
 
 def build_model(cfg: ModelConfig) -> KkRuModel:
