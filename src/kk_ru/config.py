@@ -40,6 +40,10 @@ class DataConfig:
     train_tsv: str
     eval_dev: str
     eval_test: str
+    num_workers: int = 4
+    pin_memory: bool = True
+    persistent_workers: bool = True
+    prefetch_factor: int = 2
 
 
 @dataclass
@@ -62,6 +66,7 @@ class TrainConfig:
     eval_every: int
     max_steps: int | None
     seed: int
+    compile: bool = False
 
 
 @dataclass
@@ -154,4 +159,33 @@ def load_config(path: str | Path, overrides: list[str] | None = None) -> Config:
     )
     if overrides:
         _apply_overrides(cfg, overrides)
+    validate_config(cfg)
     return cfg
+
+
+def validate_config(cfg: Config) -> None:
+    model = cfg.model
+    train = cfg.train
+    data = cfg.data
+    gen = cfg.gen
+    if model.d_model != model.n_heads * model.head_dim:
+        raise ValueError("model.d_model must equal model.n_heads * model.head_dim")
+    for name, heads in (
+        ("n_kv_heads_encoder", model.n_kv_heads_encoder),
+        ("n_kv_heads_decoder_self", model.n_kv_heads_decoder_self),
+        ("n_kv_heads_cross", model.n_kv_heads_cross),
+    ):
+        if heads <= 0 or model.n_heads % heads:
+            raise ValueError(f"model.{name} must be a positive divisor of model.n_heads")
+    if model.max_len <= 0 or gen.max_len <= 0:
+        raise ValueError("model.max_len and gen.max_len must be positive")
+    if train.micro_batch_per_gpu <= 0 or train.grad_accum <= 0:
+        raise ValueError("micro_batch_per_gpu and grad_accum must be positive")
+    if train.lr <= 0 or train.min_lr < 0 or train.min_lr > train.lr:
+        raise ValueError("train.min_lr must be in [0, train.lr]")
+    if not 0 <= train.label_smoothing < 1:
+        raise ValueError("train.label_smoothing must be in [0, 1)")
+    if data.num_workers < 0 or data.prefetch_factor <= 0:
+        raise ValueError("data.num_workers must be non-negative and prefetch_factor positive")
+    if gen.beam <= 0:
+        raise ValueError("gen.beam must be positive")

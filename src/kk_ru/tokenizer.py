@@ -15,6 +15,7 @@ class SpecialTokens:
 
 class Tokenizer:
     def __init__(self, sp_model_path: str, max_len: int = 256):
+        self.sp_model_path = sp_model_path
         self.sp = spm.SentencePieceProcessor(model_file=sp_model_path)
         self.max_len = max_len
 
