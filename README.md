@@ -33,7 +33,7 @@ make overfit
 # 5. Обучение P0 (Accelerate DDP)
 make train
 
-# 6. Оценка FLORES+ (BLEU / chrF / COMET)
+# 6. Оценка FLORES+ (BLEU / chrF / chrF++ / spBLEU)
 make eval
 ```
 
@@ -56,3 +56,21 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Оверфит-тест | `make overfit` |
 | Обучение P0 | `make train` |
 | Оценка | `make eval` |
+
+Для продолжения обучения используется Accelerate checkpoint directory:
+
+```bash
+accelerate launch -m kk_ru.train \
+  --config configs/p0.yaml \
+  --resume checkpoints/step-2000
+```
+
+Оценка принимает `checkpoints/best/model.pt` или обычный файл весов. COMET запускается
+отдельно и требует локальный checkpoint модели:
+
+```bash
+python -m kk_ru.eval --config configs/p0.yaml \
+  --checkpoint checkpoints/best/model.pt \
+  --split devtest \
+  --comet-checkpoint /path/to/comet.ckpt
+```

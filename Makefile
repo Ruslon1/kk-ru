@@ -20,4 +20,4 @@ train:
 	accelerate launch -m kk_ru.train --config configs/p0.yaml
 
 eval:
-	python -m kk_ru.eval --config configs/p0.yaml --split devtest
+	python -m kk_ru.eval --config configs/p0.yaml --checkpoint checkpoints/latest/model.pt --split devtest
