@@ -9,7 +9,7 @@ import torch
 from .config import load_config
 from .data import iter_pairs
 from .model import build_model
-from .tokenizer import load_tokenizer
+from .tokenizer import load_tokenizer, validate_vocab
 
 
 def parse_args() -> argparse.Namespace:
@@ -101,6 +101,7 @@ def translate(
     device: torch.device,
     beam: int,
     max_len: int,
+    source_max_len: int,
     batch_size: int = 32,
 ) -> list[str]:
     model.eval()
@@ -109,7 +110,7 @@ def translate(
 
     for i in range(0, len(sources), batch_size):
         chunk = sources[i : i + batch_size]
-        encoded = [tokenizer.encode(s, add_bos=True)[:tokenizer.max_len] for s in chunk]
+        encoded = [tokenizer.encode(s, add_bos=True)[:source_max_len] for s in chunk]
         longest = max(len(x) for x in encoded)
         src_ids = torch.full((len(chunk), longest), pad_id, dtype=torch.long, device=device)
         src_mask = torch.zeros((len(chunk), longest), dtype=torch.bool, device=device)
@@ -171,7 +172,15 @@ def evaluate(
     for kk, ru in iter_pairs(path):
         sources.append(kk)
         references.append(ru)
-    hypotheses = translate(model, tokenizer, sources, device, cfg.gen.beam, cfg.gen.max_len)
+    hypotheses = translate(
+        model,
+        tokenizer,
+        sources,
+        device,
+        cfg.gen.beam,
+        cfg.gen.max_len,
+        source_max_len=cfg.model.max_len,
+    )
     metrics = compute_metrics(
         hypotheses, references, sources, comet_checkpoint, compute_spbleu
     )
@@ -188,6 +197,7 @@ def main() -> None:
     device = _device()
 
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
+    validate_vocab(tokenizer, cfg.model.vocab)
     model = build_model(cfg.model)
     checkpoint = Path(args.checkpoint)
     state_path = checkpoint / "model.pt" if checkpoint.is_dir() else checkpoint
