@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import random
 import shutil
 import time
@@ -35,7 +36,32 @@ def _cache_is_complete(path: Path) -> bool:
     )
 
 
-def _build_mmap_cache(tsv_path: str, tokenizer, max_len: int, cache_dir: Path) -> None:
+def _file_fingerprint(path: str | Path) -> dict[str, int | str]:
+    file_path = Path(path)
+    stat = file_path.stat()
+    digest = hashlib.sha256()
+    with file_path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {
+        "size": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _cache_metadata(tsv_path: str, tokenizer, max_len: int) -> dict:
+    return {
+        "source": _file_fingerprint(tsv_path),
+        "tokenizer": _file_fingerprint(tokenizer.sp_model_path),
+        "max_len": max_len,
+        "version": CACHE_VERSION,
+    }
+
+
+def _build_mmap_cache(
+    tsv_path: str, tokenizer, max_len: int, cache_dir: Path, metadata: dict
+) -> None:
     temporary_dir = cache_dir.with_name(f"{cache_dir.name}.tmp-{time.time_ns()}")
     temporary_dir.mkdir(parents=True, exist_ok=False)
     cache_dir = temporary_dir
@@ -55,9 +81,8 @@ def _build_mmap_cache(tsv_path: str, tokenizer, max_len: int, cache_dir: Path) -
             count += 1
     np.save(cache_dir / "src_offsets.npy", np.asarray(src_offsets, dtype=np.int64))
     np.save(cache_dir / "tgt_offsets.npy", np.asarray(tgt_offsets, dtype=np.int64))
-    (cache_dir / "meta.json").write_text(
-        json.dumps({"count": count, "max_len": max_len, "version": CACHE_VERSION}), encoding="utf-8"
-    )
+    metadata = {**metadata, "count": count}
+    (cache_dir / "meta.json").write_text(json.dumps(metadata), encoding="utf-8")
     final_dir = Path(str(cache_dir).split(".tmp-", 1)[0])
     if final_dir.exists():
         shutil.rmtree(cache_dir)
@@ -76,20 +101,19 @@ class TranslationDataset(Dataset):
             return
 
         cache_dir = _cache_dir(tsv_path)
-        if cache and not _cache_is_complete(cache_dir):
-            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir)
+        if not _cache_is_complete(cache_dir) and cache:
+            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir, _cache_metadata(tsv_path, tokenizer, max_len))
         elif not _cache_is_complete(cache_dir):
             raise FileNotFoundError(f"token cache is missing: {cache_dir}")
 
         meta = json.loads((cache_dir / "meta.json").read_text(encoding="utf-8"))
-        if meta.get("version") != CACHE_VERSION:
+        expected_metadata = _cache_metadata(tsv_path, tokenizer, max_len)
+        if {key: meta.get(key) for key in expected_metadata} != expected_metadata:
             if not cache:
-                raise ValueError(f"token cache {cache_dir} has unsupported version")
+                raise ValueError(f"token cache {cache_dir} is stale or incompatible")
             shutil.rmtree(cache_dir)
-            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir)
+            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir, expected_metadata)
             meta = json.loads((cache_dir / "meta.json").read_text(encoding="utf-8"))
-        if meta["max_len"] != max_len:
-            raise ValueError(f"token cache {cache_dir} was built with max_len={meta['max_len']}, expected {max_len}")
         self.src_offsets = np.load(cache_dir / "src_offsets.npy", mmap_mode="r")
         self.tgt_offsets = np.load(cache_dir / "tgt_offsets.npy", mmap_mode="r")
         self.src_tokens = np.memmap(cache_dir / "src.bin", dtype=np.int32, mode="r")
