@@ -13,6 +13,7 @@ fasttext-wheel
 numpy
 pandas
 tqdm
+tensorboard
 pyyaml
 
 # GPU box only (pins an old transformers stack, conflicts with sentence-transformers on macOS):

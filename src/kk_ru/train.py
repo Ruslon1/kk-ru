@@ -150,6 +150,7 @@ def main() -> None:
                         if accelerator.is_main_process and "dev" in loaders:
                             raw = accelerator.unwrap_model(model)
                             metrics = evaluate(cfg, tokenizer, raw, "dev", accelerator.device)
+                            raw.train()
                             accelerator.log({f"dev/{name}": value for name, value in metrics.items()}, step=global_step)
                             accelerator.print(
                                 f"dev @ step {global_step}: bleu {metrics['bleu']:.2f} chrf {metrics['chrf']:.2f}"

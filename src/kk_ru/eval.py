@@ -98,11 +98,11 @@ def translate(
     sources: list[str],
     device: torch.device,
     beam: int,
+    max_len: int,
     batch_size: int = 32,
 ) -> list[str]:
     model.eval()
     pad_id = tokenizer.pad_id
-    max_len = tokenizer.max_len
     hypotheses = []
 
     for i in range(0, len(sources), batch_size):
@@ -151,7 +151,7 @@ def evaluate(cfg, tokenizer, model, split: str, device: torch.device, write: boo
     for kk, ru in iter_pairs(path):
         sources.append(kk)
         references.append(ru)
-    hypotheses = translate(model, tokenizer, sources, device, cfg.gen.beam)
+    hypotheses = translate(model, tokenizer, sources, device, cfg.gen.beam, cfg.gen.max_len)
     metrics = compute_metrics(hypotheses, references, sources)
     if write:
         out = Path(cfg.paths.reports) / f"{split}.hyp.txt"
