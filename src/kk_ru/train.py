@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 from accelerate.utils import set_seed
 
-from .config import load_config
+from .config import Config, load_config
 from .data import build_dataloaders
 from .eval import evaluate
 from .model import build_model, count_params
@@ -30,12 +30,35 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def create_accelerator(cfg: Config, config_path: str) -> Accelerator:
+    set_seed(cfg.train.seed)
+    precision = cfg.train.precision if isinstance(cfg.train.precision, str) else "no"
+    accelerator = Accelerator(
+        gradient_accumulation_steps=cfg.train.grad_accum,
+        mixed_precision=precision,
+        log_with="tensorboard",
+    )
+    accelerator.init_trackers(
+        "kk-ru", config={"config": config_path, "seed": cfg.train.seed}
+    )
+    return accelerator
+
+
+def create_tokenizer(cfg: Config):
+    tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
+    validate_vocab(tokenizer, cfg.model.vocab)
+    return tokenizer
+
+
 def build_optimizer(model, cfg):
     decay, no_decay = [], []
     for parameter in model.parameters():
         (decay if parameter.ndim >= 2 else no_decay).append(parameter)
     return torch.optim.AdamW(
-        [{"params": decay, "weight_decay": cfg.weight_decay}, {"params": no_decay, "weight_decay": 0.0}],
+        [
+            {"params": decay, "weight_decay": cfg.weight_decay},
+            {"params": no_decay, "weight_decay": 0.0},
+        ],
         lr=cfg.lr,
         betas=(0.9, 0.95),
     )
@@ -45,10 +68,24 @@ def build_scheduler(optimizer, cfg, total_steps: int):
     def lr_lambda(step: int) -> float:
         if step < cfg.warmup_steps:
             return step / max(1, cfg.warmup_steps)
-        progress = min(1.0, (step - cfg.warmup_steps) / max(1, total_steps - cfg.warmup_steps))
-        return cfg.min_lr / cfg.lr + (1.0 - cfg.min_lr / cfg.lr) * 0.5 * (1.0 + math.cos(math.pi * progress))
+        progress = min(
+            1.0,
+            (step - cfg.warmup_steps) / max(1, total_steps - cfg.warmup_steps),
+        )
+        return cfg.min_lr / cfg.lr + (1.0 - cfg.min_lr / cfg.lr) * 0.5 * (
+            1.0 + math.cos(math.pi * progress)
+        )
 
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+
+def prepare_training(accelerator, model, optimizer, train_loader, cfg):
+    model, optimizer, train_loader = accelerator.prepare(model, optimizer, train_loader)
+    steps_per_epoch = max(1, math.ceil(len(train_loader) / cfg.train.grad_accum))
+    total_steps = cfg.train.max_steps or steps_per_epoch * cfg.train.epochs
+    scheduler = build_scheduler(optimizer, cfg.train, total_steps)
+    scheduler = accelerator.prepare(scheduler)
+    return model, optimizer, train_loader, scheduler, total_steps
 
 
 def _checkpoint_path(root: Path, step: int) -> Path:
@@ -75,7 +112,14 @@ def _save_checkpoint(
     accelerator.wait_for_everyone()
 
 
-def _save_export(accelerator: Accelerator, model, root: Path, name: str, step: int, metrics: dict) -> None:
+def _save_export(
+    accelerator: Accelerator,
+    model,
+    root: Path,
+    name: str,
+    step: int,
+    metrics: dict,
+) -> None:
     if not accelerator.is_main_process:
         return
     export_dir = root / name
@@ -120,121 +164,203 @@ def _set_loader_epoch(loader, epoch: int) -> None:
         sampler.set_epoch(epoch)
 
 
+class Trainer:
+    def __init__(
+        self,
+        accelerator: Accelerator,
+        model,
+        optimizer,
+        scheduler,
+        tokenizer,
+        loaders: dict,
+        cfg: Config,
+        total_steps: int,
+    ) -> None:
+        self.accelerator = accelerator
+        self.model = model
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+        self.tokenizer = tokenizer
+        self.loaders = loaders
+        self.train_loader = loaders["train"]
+        self.cfg = cfg
+        self.total_steps = total_steps
+        self.save_root = Path(cfg.paths.checkpoints)
+        self.save_root.mkdir(parents=True, exist_ok=True)
+        self.global_step = 0
+        self.best_spbleu = -float("inf")
+
+    def train(self, resume: str | None = None) -> None:
+        resume_state = _load_resume_state(resume)
+        if resume:
+            self.accelerator.load_state(resume)
+        self.global_step = resume_state["step"]
+        self._log_start()
+        self.optimizer.zero_grad(set_to_none=True)
+        self.model.train()
+
+        for epoch in range(resume_state["epoch"], self.cfg.train.epochs):
+            _set_loader_epoch(self.train_loader, epoch)
+            for batch_index, batch in enumerate(self.train_loader):
+                if epoch == resume_state["epoch"] and batch_index < resume_state["batch_index"]:
+                    continue
+                if self.global_step >= self.total_steps:
+                    break
+                self._train_batch(batch, epoch, batch_index)
+            if self.global_step >= self.total_steps:
+                break
+
+        _save_checkpoint(
+            self.accelerator,
+            self.model,
+            self.save_root,
+            self.global_step,
+            epoch + 1,
+            0,
+        )
+        if self.accelerator.is_main_process:
+            self.accelerator.print(
+                f"done. final checkpoint at {_checkpoint_path(self.save_root, self.global_step)}"
+            )
+        self.accelerator.end_training()
+
+    def _log_start(self) -> None:
+        self.accelerator.print(f"model params: {count_params(self.model):,}")
+        self.accelerator.print(
+            f"train batches/rank: {len(self.train_loader)} | total steps: {self.total_steps}"
+        )
+
+    def _train_batch(self, batch, epoch: int, batch_index: int) -> None:
+        batch = {
+            key: value.to(self.accelerator.device, non_blocking=True)
+            for key, value in batch.items()
+        }
+        with self.accelerator.accumulate(self.model):
+            with self.accelerator.autocast():
+                logits = self.model(
+                    batch["src_ids"],
+                    batch["src_mask"],
+                    batch["tgt_ids"][:, :-1],
+                    tgt_mask=batch["tgt_mask"][:, :-1],
+                )
+                loss = F.cross_entropy(
+                    logits.reshape(-1, logits.shape[-1]),
+                    batch["labels"].reshape(-1),
+                    ignore_index=self.tokenizer.pad_id,
+                    label_smoothing=self.cfg.train.label_smoothing,
+                )
+            self.accelerator.backward(loss)
+            if self.accelerator.sync_gradients:
+                self._optimizer_step(loss, epoch, batch_index)
+
+    def _optimizer_step(self, loss, epoch: int, batch_index: int) -> None:
+        self.accelerator.clip_grad_norm_(
+            self.model.parameters(), self.cfg.train.clip_grad_norm
+        )
+        self.optimizer.step()
+        self.scheduler.step()
+        self.optimizer.zero_grad(set_to_none=True)
+        self.global_step += 1
+        learning_rate = self.scheduler.get_last_lr()[0]
+        self.accelerator.log(
+            {"loss": loss.detach().float().item(), "learning_rate": learning_rate},
+            step=self.global_step,
+        )
+        if self.global_step % LOG_EVERY == 0:
+            self.accelerator.print(
+                f"epoch {epoch} step {self.global_step}/{self.total_steps} "
+                f"loss {loss.item():.4f} lr {learning_rate:.2e}"
+            )
+        if self.cfg.train.save_every and self.global_step % self.cfg.train.save_every == 0:
+            self._save_training_checkpoint(epoch, batch_index)
+        if self.cfg.train.eval_every and self.global_step % self.cfg.train.eval_every == 0:
+            self._evaluate()
+
+    def _save_training_checkpoint(self, epoch: int, batch_index: int) -> None:
+        _save_checkpoint(
+            self.accelerator,
+            self.model,
+            self.save_root,
+            self.global_step,
+            epoch,
+            batch_index + 1,
+        )
+        if self.accelerator.is_main_process:
+            _prune_checkpoints(self.save_root)
+
+    def _evaluate(self) -> None:
+        self.accelerator.wait_for_everyone()
+        if self.accelerator.is_main_process and "dev" in self.loaders:
+            raw = self.accelerator.unwrap_model(self.model)
+            metrics = evaluate(
+                self.cfg, self.tokenizer, raw, "dev", self.accelerator.device
+            )
+            raw.train()
+            self.accelerator.log(
+                {f"dev/{name}": value for name, value in metrics.items()},
+                step=self.global_step,
+            )
+            _save_export(
+                self.accelerator,
+                self.model,
+                self.save_root,
+                "latest",
+                self.global_step,
+                metrics,
+            )
+            selection_score = metrics.get("spbleu", metrics["chrf++"])
+            if selection_score > self.best_spbleu:
+                self.best_spbleu = selection_score
+                _save_export(
+                    self.accelerator,
+                    self.model,
+                    self.save_root,
+                    "best",
+                    self.global_step,
+                    metrics,
+                )
+            self.accelerator.print(
+                f"dev @ step {self.global_step}: "
+                f"bleu {metrics['bleu']:.2f} chrf {metrics['chrf']:.2f}"
+            )
+        self.accelerator.wait_for_everyone()
+
+
 def main() -> None:
     args = parse_args()
     cfg = load_config(args.config, overrides=args.opts)
-    set_seed(cfg.train.seed)
-    precision = cfg.train.precision if isinstance(cfg.train.precision, str) else "no"
-    accelerator = Accelerator(
-        gradient_accumulation_steps=cfg.train.grad_accum,
-        mixed_precision=precision,
-        log_with="tensorboard",
-    )
-    accelerator.init_trackers("kk-ru", config={"config": str(args.config), "seed": cfg.train.seed})
-
-    tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
-    validate_vocab(tokenizer, cfg.model.vocab)
+    accelerator = create_accelerator(cfg, args.config)
+    tokenizer = create_tokenizer(cfg)
     with accelerator.main_process_first():
         loaders = build_dataloaders(
-            cfg, tokenizer, train_limit=OVERFIT_LIMIT if args.overfit else 0
+            cfg,
+            tokenizer,
+            train_limit=OVERFIT_LIMIT if args.overfit else 0,
         )
-    train_loader = loaders["train"]
+
     model = build_model(cfg.model)
     if cfg.train.compile:
         model = torch.compile(model)
     optimizer = build_optimizer(model, cfg.train)
-    model, optimizer, train_loader = accelerator.prepare(model, optimizer, train_loader)
-    steps_per_epoch = max(1, math.ceil(len(train_loader) / cfg.train.grad_accum))
-    total_steps = cfg.train.max_steps or steps_per_epoch * cfg.train.epochs
-    scheduler = build_scheduler(optimizer, cfg.train, total_steps)
-    scheduler = accelerator.prepare(scheduler)
+    model, optimizer, loaders["train"], scheduler, total_steps = prepare_training(
+        accelerator,
+        model,
+        optimizer,
+        loaders["train"],
+        cfg,
+    )
 
-    resume_state = _load_resume_state(args.resume)
-    if args.resume:
-        accelerator.load_state(args.resume)
-
-    accelerator.print(f"model params: {count_params(model):,}")
-    accelerator.print(f"train batches/rank: {len(train_loader)} | total steps: {total_steps}")
-    optimizer.zero_grad(set_to_none=True)
-    global_step = resume_state["step"]
-    model.train()
-    save_root = Path(cfg.paths.checkpoints)
-    save_root.mkdir(parents=True, exist_ok=True)
-    best_spbleu = -float("inf")
-
-    resume_epoch = resume_state["epoch"]
-    resume_batch = resume_state["batch_index"]
-    for epoch in range(resume_epoch, cfg.train.epochs):
-        _set_loader_epoch(train_loader, epoch)
-        for batch_index, batch in enumerate(train_loader):
-            if epoch == resume_epoch and batch_index < resume_batch:
-                continue
-            if global_step >= total_steps:
-                break
-            batch = {
-                key: value.to(accelerator.device, non_blocking=True)
-                for key, value in batch.items()
-            }
-            with accelerator.accumulate(model):
-                with accelerator.autocast():
-                    logits = model(
-                        batch["src_ids"],
-                        batch["src_mask"],
-                        batch["tgt_ids"][:, :-1],
-                        tgt_mask=batch["tgt_mask"][:, :-1],
-                    )
-                    loss = F.cross_entropy(
-                        logits.reshape(-1, logits.shape[-1]),
-                        batch["labels"].reshape(-1),
-                        ignore_index=tokenizer.pad_id,
-                        label_smoothing=cfg.train.label_smoothing,
-                    )
-                accelerator.backward(loss)
-                if accelerator.sync_gradients:
-                    accelerator.clip_grad_norm_(model.parameters(), cfg.train.clip_grad_norm)
-                    optimizer.step()
-                    scheduler.step()
-                    optimizer.zero_grad(set_to_none=True)
-                    global_step += 1
-                    learning_rate = scheduler.get_last_lr()[0]
-                    accelerator.log(
-                        {"loss": loss.detach().float().item(), "learning_rate": learning_rate},
-                        step=global_step,
-                    )
-                    if global_step % LOG_EVERY == 0:
-                        accelerator.print(
-                            f"epoch {epoch} step {global_step}/{total_steps} "
-                            f"loss {loss.item():.4f} lr {learning_rate:.2e}"
-                        )
-                    if cfg.train.save_every and global_step % cfg.train.save_every == 0:
-                        _save_checkpoint(
-                            accelerator, model, save_root, global_step, epoch, batch_index + 1
-                        )
-                        if accelerator.is_main_process:
-                            _prune_checkpoints(save_root)
-                    if cfg.train.eval_every and global_step % cfg.train.eval_every == 0:
-                        accelerator.wait_for_everyone()
-                        if accelerator.is_main_process and "dev" in loaders:
-                            raw = accelerator.unwrap_model(model)
-                            metrics = evaluate(cfg, tokenizer, raw, "dev", accelerator.device)
-                            raw.train()
-                            accelerator.log({f"dev/{name}": value for name, value in metrics.items()}, step=global_step)
-                            _save_export(accelerator, model, save_root, "latest", global_step, metrics)
-                            selection_score = metrics.get("spbleu", metrics["chrf++"])
-                            if selection_score > best_spbleu:
-                                best_spbleu = selection_score
-                                _save_export(accelerator, model, save_root, "best", global_step, metrics)
-                            accelerator.print(
-                                f"dev @ step {global_step}: bleu {metrics['bleu']:.2f} chrf {metrics['chrf']:.2f}"
-                            )
-                        accelerator.wait_for_everyone()
-        if global_step >= total_steps:
-            break
-
-    _save_checkpoint(accelerator, model, save_root, global_step, epoch + 1, 0)
-    if accelerator.is_main_process:
-        accelerator.print(f"done. final checkpoint at {_checkpoint_path(save_root, global_step)}")
-    accelerator.end_training()
+    trainer = Trainer(
+        accelerator=accelerator,
+        model=model,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        tokenizer=tokenizer,
+        loaders=loaders,
+        cfg=cfg,
+        total_steps=total_steps,
+    )
+    trainer.train(resume=args.resume)
 
 
 if __name__ == "__main__":
