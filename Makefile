@@ -1,4 +1,4 @@
-.PHONY: install data filter tokenizer overfit train eval docker-build docker-shell docker-train docker-eval
+.PHONY: install data filter tokenizer overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large docker-build docker-shell docker-train docker-eval
 
 install:
 	pip install -r requirements.txt
@@ -19,8 +19,26 @@ overfit:
 train:
 	accelerate launch -m kk_ru.train --config configs/p0.yaml
 
+train-small:
+	accelerate launch -m kk_ru.train --config configs/small.yaml
+
+train-p0:
+	accelerate launch -m kk_ru.train --config configs/p0.yaml
+
+train-large:
+	accelerate launch -m kk_ru.train --config configs/large.yaml
+
 eval:
-	python -m kk_ru.eval --config configs/p0.yaml --checkpoint checkpoints/step-471/model.pt --split devtest
+	python -m kk_ru.eval --config configs/p0.yaml --checkpoint checkpoints/p0/best/model.pt --split devtest
+
+eval-small:
+	python -m kk_ru.eval --config configs/small.yaml --checkpoint checkpoints/small/best/model.pt --split devtest
+
+eval-p0:
+	python -m kk_ru.eval --config configs/p0.yaml --checkpoint checkpoints/p0/best/model.pt --split devtest
+
+eval-large:
+	python -m kk_ru.eval --config configs/large.yaml --checkpoint checkpoints/large/best/model.pt --split devtest
 
 docker-build:
 	docker build -t kk-ru:cuda128 .
