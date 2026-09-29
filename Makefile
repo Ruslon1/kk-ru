@@ -1,4 +1,5 @@
 GPUS ?= 8
+PLATFORM ?= linux/amd64
 
 .PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark docker-build docker-shell docker-train docker-eval
 
@@ -49,7 +50,7 @@ benchmark:
 	python scripts/benchmark.py --spbleu
 
 docker-build:
-	docker build -t kk-ru:cuda128 .
+	docker build --platform $(PLATFORM) -t kk-ru:cuda128 .
 
 docker-shell:
 	docker run --rm -it --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" kk-ru:cuda128 /bin/bash
