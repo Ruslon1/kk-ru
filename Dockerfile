@@ -19,5 +19,4 @@ RUN python3 -m pip install --break-system-packages --upgrade pip \
 
 COPY . .
 
-ENTRYPOINT ["python3", "-m"]
-CMD ["kk_ru.train", "--config", "configs/p0.yaml"]
+CMD ["python3", "-m", "kk_ru.train", "--config", "configs/p0.yaml"]
