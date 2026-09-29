@@ -56,6 +56,59 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Оверфит-тест | `make overfit` |
 | Обучение P0 | `make train` |
 | Оценка | `make eval` |
+| Проверить окружение | `make check-env` |
+| Собрать Docker | `make docker-build` |
+| Запустить Docker-обучение | `make docker-train GPUS=8` |
+| Сравнить checkpoints | `make benchmark` |
+
+## Экспериментальная матрица
+
+В репозитории есть три конфигурации одной Qwen-подобной encoder-decoder архитектуры:
+
+| Конфиг | Параметры | Checkpoints | Reports |
+|---|---:|---|---|
+| `configs/small.yaml` | ~82M | `checkpoints/small` | `reports/small` |
+| `configs/p0.yaml` | ~202M | `checkpoints/p0` | `reports/p0` |
+| `configs/large.yaml` | ~578M | `checkpoints/large` | `reports/large` |
+
+У всех конфигов одинаковые данные, tokenizer, seed и evaluation-параметры. Размер
+модели меняется через `d_model`, число слоёв и ширину SwiGLU. Для отдельной GPU
+конфигурацию можно переопределить без изменения YAML:
+
+```bash
+accelerate launch --num_processes 1 -m kk_ru.train \
+  --config configs/large.yaml \
+  --opts train.micro_batch_per_gpu=2 train.grad_accum=32
+```
+
+Каждый запуск сохраняет `resolved_config.yaml` и `run_manifest.json` в своём
+каталоге checkpoints. Manifest содержит git revision, версии Python/PyTorch/CUDA,
+список GPU и время старта.
+
+## NVIDIA Docker
+
+Образ рассчитан на Linux с NVIDIA Container Toolkit:
+
+```bash
+make docker-build
+make docker-shell
+make docker-train GPUS=8
+make docker-train GPUS=1
+```
+
+Перед длинным запуском проверь окружение и наличие данных:
+
+```bash
+make check-env
+```
+
+После завершения всех моделей собери общую таблицу:
+
+```bash
+make benchmark
+```
+
+Результаты появятся в `reports/benchmark.json` и `reports/benchmark.csv`.
 
 Для продолжения обучения используется Accelerate checkpoint directory:
 
