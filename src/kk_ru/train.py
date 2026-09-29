@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import math
+import platform
 import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import torch
 import torch.nn.functional as F
+import yaml
 from accelerate import Accelerator
 from accelerate.utils import set_seed
 
@@ -154,6 +160,40 @@ def _load_resume_state(checkpoint: str | None) -> dict[str, int]:
         "epoch": int(state.get("epoch", 0)),
         "batch_index": int(state.get("batch_index", 0)),
     }
+
+
+def _git_revision() -> str | None:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _write_run_manifest(cfg: Config, config_path: str) -> None:
+    root = Path(cfg.paths.checkpoints)
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "resolved_config.yaml").write_text(
+        yaml.safe_dump(dataclasses.asdict(cfg), sort_keys=False), encoding="utf-8"
+    )
+    manifest = {
+        "config": str(Path(config_path)),
+        "git_revision": _git_revision(),
+        "python": sys.version,
+        "platform": platform.platform(),
+        "torch": torch.__version__,
+        "cuda": torch.version.cuda,
+        "gpu_count": torch.cuda.device_count(),
+        "gpus": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    }
+    (root / "run_manifest.json").write_text(
+        json.dumps(manifest, indent=2), encoding="utf-8"
+    )
 
 
 def _set_loader_epoch(loader, epoch: int) -> None:
@@ -330,6 +370,9 @@ def main() -> None:
     args = parse_args()
     cfg = load_config(args.config, overrides=args.opts)
     accelerator = create_accelerator(cfg, args.config)
+    if accelerator.is_main_process:
+        _write_run_manifest(cfg, args.config)
+    accelerator.wait_for_everyone()
     tokenizer = create_tokenizer(cfg)
     with accelerator.main_process_first():
         loaders = build_dataloaders(

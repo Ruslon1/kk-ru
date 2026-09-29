@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import urllib.error
 from pathlib import Path
 
@@ -188,6 +189,9 @@ def evaluate(
         out = Path(cfg.paths.reports) / f"{split}.hyp.txt"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text("\n".join(hypotheses), encoding="utf-8")
+        (out.parent / f"{split}.metrics.json").write_text(
+            json.dumps(metrics, indent=2), encoding="utf-8"
+        )
     return metrics
 
 

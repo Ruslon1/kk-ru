@@ -1,4 +1,4 @@
-.PHONY: install data filter tokenizer overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large docker-build docker-shell docker-train docker-eval
+.PHONY: install data filter tokenizer overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark docker-build docker-shell docker-train docker-eval
 
 install:
 	pip install -r requirements.txt
@@ -39,6 +39,9 @@ eval-p0:
 
 eval-large:
 	python -m kk_ru.eval --config configs/large.yaml --checkpoint checkpoints/large/best/model.pt --split devtest
+
+benchmark:
+	python scripts/benchmark.py --spbleu
 
 docker-build:
 	docker build -t kk-ru:cuda128 .
