@@ -6,7 +6,7 @@ CHECKPOINT = checkpoints/$(MODEL)
 REPORTS = reports/$(MODEL)
 RUNS = runs/$(MODEL)
 
-.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark docker-build docker-shell docker-train docker-eval
+.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark docker-build docker-shell docker-check docker-overfit docker-train docker-eval
 
 install:
 	pip install -r requirements.txt
@@ -60,9 +60,15 @@ docker-build:
 docker-shell:
 	docker run --rm -it --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" kk-ru:cuda128 /bin/bash
 
+docker-check:
+	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" kk-ru:cuda128 python3 scripts/check_environment.py --config $(CONFIG) --min-gpus $(GPUS)
+
+docker-overfit:
+	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/runs:/workspace/kk-ru/runs" kk-ru:cuda128 accelerate launch --num_processes 1 -m kk_ru.train --config configs/small.yaml --overfit --opts train.max_steps=10 train.epochs=1 train.micro_batch_per_gpu=1 train.grad_accum=1 train.save_every=10 train.eval_every=0 paths.checkpoints=checkpoints/smoke paths.reports=reports/smoke paths.logs=runs/smoke
+
 docker-train:
 	@test -f "$(CONFIG)" || (echo "unknown model: $(MODEL) (expected small, p0, or large)" >&2; exit 2)
-	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/runs:/workspace/kk-ru/runs" kk-ru:cuda128 accelerate launch --num_processes $(GPUS) -m kk_ru.train --config $(CONFIG)
+	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/runs:/workspace/kk-ru/runs" kk-ru:cuda128 accelerate launch --num_processes $(GPUS) -m kk_ru.train --config $(CONFIG) $(if $(strip $(OPTS)),--opts $(OPTS)) $(if $(strip $(RESUME)),--resume $(RESUME))
 
 docker-eval:
 	@test -f "$(CONFIG)" || (echo "unknown model: $(MODEL) (expected small, p0, or large)" >&2; exit 2)
