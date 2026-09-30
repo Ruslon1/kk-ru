@@ -92,8 +92,21 @@ accelerate launch --num_processes 1 -m kk_ru.train \
 ```bash
 make docker-build
 make docker-shell
-make docker-train GPUS=8
-make docker-train GPUS=1
+make docker-train MODEL=small GPUS=8
+make docker-train MODEL=p0 GPUS=8
+make docker-train MODEL=large GPUS=8
+```
+
+`MODEL` выбирает конфигурацию `configs/<model>.yaml` и сохраняет результаты в
+`checkpoints/<model>`, `reports/<model>` и `runs/<model>`. Допустимые значения:
+`small`, `p0`, `large`. Для одной GPU используйте `GPUS=1`.
+
+Оценка конкретной модели:
+
+```bash
+make docker-eval MODEL=small
+make docker-eval MODEL=p0
+make docker-eval MODEL=large
 ```
 
 Перед длинным запуском проверь окружение и наличие данных:
