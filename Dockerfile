@@ -17,9 +17,10 @@ WORKDIR /workspace/kk-ru
 COPY requirements.txt pyproject.toml README.md ./
 RUN python3 -m pip install --upgrade pip \
     && python3 -m pip install --index-url https://download.pytorch.org/whl/cu128 torch \
-    && python3 -m pip install -r requirements.txt \
-    && python3 -m pip install -e . --no-deps
+    && python3 -m pip install -r requirements.txt
 
 COPY . .
+
+RUN python3 -m pip install -e . --no-deps
 
 CMD ["python3", "-m", "kk_ru.train", "--config", "configs/p0.yaml"]
