@@ -71,6 +71,29 @@ def messages_for(source: str) -> list[dict[str, str]]:
     ]
 
 
+def reasoning_for(model: ModelInfo) -> dict[str, Any] | None:
+    if "reasoning" not in model.supported_parameters:
+        return None
+    return {"effort": "none", "exclude": True}
+
+
+def request_hash(
+    model_id: str,
+    source: str,
+    max_tokens: int,
+    reasoning: dict[str, Any] | None,
+) -> str:
+    request = {
+        "model": model_id,
+        "messages": messages_for(source),
+        "temperature": 0,
+        "max_tokens": max_tokens,
+        "reasoning": reasoning,
+    }
+    encoded = json.dumps(request, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
 def estimate_run_cost(
     model: ModelInfo,
     sources: list[str],
@@ -115,7 +138,12 @@ def _record_cost(record: dict[str, Any], model: ModelInfo) -> float:
     return usage_cost(record.get("usage", {}), model) or 0.0
 
 
-def load_completed(path: Path, model: str, source_hashes: list[str]) -> dict[int, dict[str, Any]]:
+def load_completed(
+    path: Path,
+    model: str,
+    source_hashes: list[str],
+    request_hashes: list[str],
+) -> dict[int, dict[str, Any]]:
     completed: dict[int, dict[str, Any]] = {}
     if not path.exists():
         return completed
@@ -123,12 +151,16 @@ def load_completed(path: Path, model: str, source_hashes: list[str]) -> dict[int
         for line in file:
             if not line.strip():
                 continue
-            record = json.loads(line)
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
             index = int(record["index"])
             if (
                 record.get("model") == model
                 and 0 <= index < len(source_hashes)
                 and record.get("source_sha256") == source_hashes[index]
+                and record.get("request_sha256") == request_hashes[index]
                 and record.get("status") == "ok"
             ):
                 completed[index] = record
@@ -189,6 +221,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--budget-usd", type=float, default=8.75)
     parser.add_argument("--max-tokens", type=int, default=256)
     parser.add_argument("--limit", type=int, default=0, help="evaluate only the first N rows")
+    parser.add_argument("--safety-factor", type=float, default=1.25, help="multiplier for cost reservations")
     parser.add_argument("--out", default="reports/openrouter")
     parser.add_argument("--comet-model", default=None, help="optional COMET checkpoint/model identifier")
     parser.add_argument("--cometkiwi-model", default=None, help="optional reference-free COMETKiwi model identifier")
@@ -205,10 +238,20 @@ def main() -> int:
         for name, default in DEFAULT_NEURAL_METRICS.items():
             if getattr(args, name) is None:
                 setattr(args, name, default)
-    if args.budget_usd <= 0 or args.max_tokens <= 0 or args.limit < 0:
-        raise SystemExit("budget and max-tokens must be positive; limit must be non-negative")
+    if (
+        args.budget_usd <= 0
+        or args.max_tokens <= 0
+        or args.limit < 0
+        or args.safety_factor < 1
+    ):
+        raise SystemExit("budget and max-tokens must be positive, limit non-negative, and safety-factor at least 1")
     if not args.dry_run and not os.getenv("OPENROUTER_API_KEY"):
         raise SystemExit("Set OPENROUTER_API_KEY before running translations")
+    if not args.dry_run:
+        try:
+            import sacrebleu
+        except ImportError as error:
+            raise SystemExit("Install sacrebleu before running translations") from error
 
     config_path = ROOT / args.config
     if not config_path.exists():
@@ -232,7 +275,9 @@ def main() -> int:
     if missing:
         raise SystemExit("models not present in current OpenRouter catalog: " + ", ".join(missing))
     estimates = {
-        model_id: estimate_run_cost(catalog[model_id], sources, args.max_tokens)
+        model_id: estimate_run_cost(
+            catalog[model_id], sources, args.max_tokens, args.safety_factor
+        )
         for model_id in args.models
     }
     unknown = [model for model, estimate in estimates.items() if estimate is None]
@@ -263,7 +308,7 @@ def main() -> int:
         "max_tokens": args.max_tokens,
         "budget_usd": args.budget_usd,
         "projected_cost_usd": projected,
-        "safety_factor": 1.25,
+        "safety_factor": args.safety_factor,
         "comet_model": args.comet_model,
         "cometkiwi_model": args.cometkiwi_model,
         "xcomet_model": args.xcomet_model,
@@ -276,6 +321,7 @@ def main() -> int:
                 "prompt": catalog[model_id].prompt_price,
                 "completion": catalog[model_id].completion_price,
                 "context_length": catalog[model_id].context_length,
+                "supported_parameters": catalog[model_id].supported_parameters,
             }
             for model_id in args.models
         },
@@ -288,7 +334,11 @@ def main() -> int:
     for model_id in args.models:
         model_info = catalog[model_id]
         log_path = out / f"{model_id.replace('/', '__')}.jsonl"
-        completed = load_completed(log_path, model_id, source_hashes)
+        reasoning = reasoning_for(model_info)
+        request_hashes = [
+            request_hash(model_id, source, args.max_tokens, reasoning) for source in sources
+        ]
+        completed = load_completed(log_path, model_id, source_hashes, request_hashes)
         total_spent += sum(_record_cost(record, model_info) for record in completed.values())
         print(f"{model_id}: resuming {len(completed)}/{len(sources)} rows")
         with log_path.open("a", encoding="utf-8") as log:
@@ -297,10 +347,11 @@ def main() -> int:
                     continue
                 request_messages = messages_for(source)
                 request_estimate = estimate_cost(model_info, request_messages, args.max_tokens)
-                if request_estimate is None or (total_spent + request_estimate) > args.budget_usd:
+                reserved_cost = request_estimate * args.safety_factor if request_estimate is not None else None
+                if reserved_cost is None or (total_spent + reserved_cost) > args.budget_usd:
                     raise SystemExit(
                         f"budget guard stopped before {model_id} row {index}; "
-                        f"spent/estimated ${total_spent:.4f}, next worst-case request ${request_estimate or 0:.4f}"
+                        f"spent/reserved ${total_spent:.4f}, next reserved request ${reserved_cost or 0:.4f}"
                     )
                 started = time.perf_counter()
                 try:
@@ -309,7 +360,7 @@ def main() -> int:
                         request_messages,
                         temperature=0,
                         max_tokens=args.max_tokens,
-                        reasoning={"effort": "none", "exclude": True},
+                        reasoning=reasoning,
                     )
                 except OpenRouterError as error:
                     failure = {
@@ -336,6 +387,7 @@ def main() -> int:
                     "reference": reference,
                     "hypothesis": result.text,
                     "source_sha256": source_hashes[index],
+                    "request_sha256": request_hashes[index],
                     "status": "ok",
                     "response_id": result.response_id,
                     "returned_model": result.model,

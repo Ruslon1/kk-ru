@@ -46,6 +46,7 @@ class BenchmarkHelpersTests(unittest.TestCase):
                     "index": 0,
                     "model": "qwen/test",
                     "source_sha256": "source-0",
+                    "request_sha256": "request-0",
                     "status": "ok",
                     "hypothesis": "один",
                 },
@@ -53,6 +54,7 @@ class BenchmarkHelpersTests(unittest.TestCase):
                     "index": 1,
                     "model": "qwen/test",
                     "source_sha256": "wrong",
+                    "request_sha256": "request-1",
                     "status": "ok",
                     "hypothesis": "два",
                 },
@@ -60,12 +62,18 @@ class BenchmarkHelpersTests(unittest.TestCase):
                     "index": 2,
                     "model": "qwen/test",
                     "source_sha256": "source-2",
+                    "request_sha256": "request-2",
                     "status": "error",
                 },
             ]
             path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
 
-            completed = benchmark.load_completed(path, "qwen/test", ["source-0", "source-1", "source-2"])
+            completed = benchmark.load_completed(
+                path,
+                "qwen/test",
+                ["source-0", "source-1", "source-2"],
+                ["request-0", "request-1", "request-2"],
+            )
 
         self.assertEqual(sorted(completed), [0])
         self.assertEqual(completed[0]["hypothesis"], "один")

@@ -26,16 +26,23 @@ class ModelInfo:
     prompt_price: float | None
     completion_price: float | None
     context_length: int | None
+    supported_parameters: tuple[str, ...] = ()
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> "ModelInfo":
         pricing = payload.get("pricing") or {}
+        supported_parameters = payload.get("supported_parameters") or []
+        if not isinstance(supported_parameters, list):
+            supported_parameters = []
         return cls(
             id=str(payload["id"]),
             name=str(payload.get("name") or payload["id"]),
             prompt_price=_price(pricing.get("prompt")),
             completion_price=_price(pricing.get("completion")),
             context_length=_integer(payload.get("context_length")),
+            supported_parameters=tuple(
+                parameter for parameter in supported_parameters if isinstance(parameter, str)
+            ),
         )
 
 

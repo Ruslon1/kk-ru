@@ -45,6 +45,7 @@ class OpenRouterClientTests(unittest.TestCase):
                             "name": "Qwen test",
                             "pricing": {"prompt": "0.000001", "completion": "0.000002"},
                             "context_length": 4096,
+                            "supported_parameters": ["reasoning", "temperature"],
                         }
                     ]
                 }
@@ -56,6 +57,7 @@ class OpenRouterClientTests(unittest.TestCase):
 
         self.assertEqual(models["qwen/test"].prompt_price, 0.000001)
         self.assertEqual(models["qwen/test"].completion_price, 0.000002)
+        self.assertEqual(models["qwen/test"].supported_parameters, ("reasoning", "temperature"))
         self.assertEqual(opener.requests[0][0].full_url, "https://example.test/api/v1/models")
 
     def test_unknown_catalog_price_is_unavailable(self):
