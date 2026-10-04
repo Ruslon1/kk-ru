@@ -6,7 +6,7 @@ CHECKPOINT = checkpoints/$(MODEL)
 REPORTS = reports/$(MODEL)
 RUNS = runs/$(MODEL)
 
-.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark docker-build docker-shell docker-check docker-overfit docker-train docker-eval
+.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter test docker-build docker-shell docker-check docker-overfit docker-train docker-eval
 
 install:
 	pip install -r requirements.txt
@@ -53,6 +53,12 @@ eval-large:
 
 benchmark:
 	python scripts/benchmark.py --spbleu
+
+benchmark-openrouter:
+	python scripts/benchmark_openrouter.py --config configs/p0.yaml --split devtest --budget-usd 8.75 --dry-run
+
+test:
+	PYTHONPATH=src python -m unittest discover -s tests -v
 
 docker-build:
 	docker build --platform $(PLATFORM) -t kk-ru:cuda128 .

@@ -55,6 +55,8 @@ def _price(value: Any) -> float | None:
         number = float(value)
     except (TypeError, ValueError) as error:
         raise ValueError(f"invalid model price: {value!r}") from error
+    if number == -1:
+        return None
     if number < 0:
         raise ValueError(f"model price must be non-negative: {value!r}")
     return number

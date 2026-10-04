@@ -60,6 +60,33 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Собрать Docker | `make docker-build` |
 | Запустить Docker-обучение | `make docker-train GPUS=8` |
 | Сравнить checkpoints | `make benchmark` |
+| Проверить OpenRouter-модели и стоимость без перевода | `make benchmark-openrouter` |
+| Запустить тесты | `make test` |
+
+### OpenRouter benchmark
+
+The hosted-model benchmark uses the same FLORES+ `devtest` references for each
+model. It fetches current model prices from OpenRouter, estimates the full run
+with a 25% safety margin, and refuses to start if the estimate exceeds the
+budget. The default candidate list is Qwen3.8 27B, Qwen3.8 2.4T A95B,
+Gemma 4 26B A4B, Gemma 4 31B, and Qwen3.8 Max. Confirm catalog availability and
+pricing with a dry run before spending credits:
+
+```bash
+make benchmark-openrouter
+
+export OPENROUTER_API_KEY="..."
+python scripts/benchmark_openrouter.py \
+  --config configs/p0.yaml --split devtest --budget-usd 8.75
+```
+
+Use `--models` to select candidates, `--limit N` for a small smoke test,
+`--out DIR` to choose a report directory, and `--comet-model MODEL` to enable
+COMET (requires installing `unbabel-comet`). Each response is flushed to a
+per-model JSONL file so an interrupted run can resume. The report directory
+contains a manifest, raw records, translations, and a summary with BLEU, chrF,
+chrF++, TER, FLORES spBLEU, COMET when enabled, cost, provider, and latency.
+The API key is read from the environment and is never written to reports.
 
 ## Экспериментальная матрица
 

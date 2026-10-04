@@ -58,6 +58,16 @@ class OpenRouterClientTests(unittest.TestCase):
         self.assertEqual(models["qwen/test"].completion_price, 0.000002)
         self.assertEqual(opener.requests[0][0].full_url, "https://example.test/api/v1/models")
 
+    def test_unknown_catalog_price_is_unavailable(self):
+        opener = FakeOpener(
+            [{"data": [{"id": "qwen/test", "pricing": {"prompt": "-1", "completion": "-1"}}]}]
+        )
+
+        model = OpenRouterClient(opener=opener).list_models()["qwen/test"]
+
+        self.assertIsNone(model.prompt_price)
+        self.assertIsNone(model.completion_price)
+
     def test_complete_sends_auth_and_extracts_text(self):
         opener = FakeOpener(
             [
