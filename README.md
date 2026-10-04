@@ -81,11 +81,15 @@ python scripts/benchmark_openrouter.py \
 ```
 
 Use `--models` to select candidates, `--limit N` for a small smoke test,
-`--out DIR` to choose a report directory, and `--comet-model MODEL` to enable
-COMET (requires installing `unbabel-comet`). Each response is flushed to a
-per-model JSONL file so an interrupted run can resume. The report directory
-contains a manifest, raw records, translations, and a summary with BLEU, chrF,
-chrF++, TER, FLORES spBLEU, COMET when enabled, cost, provider, and latency.
+`--out DIR` for a report directory, and `--all-metrics` to request COMET,
+COMETKiwi, XCOMET-XL, and multilingual BERTScore in addition to lexical
+metrics. Neural metrics are optional; missing packages or model downloads are
+recorded in `metric_errors` instead of being silently omitted. Individual flags
+such as `--comet-model MODEL` override the standard identifiers. Each response
+is flushed to a per-model JSONL file so an interrupted run can resume. The
+report directory contains a manifest, raw records, translations, and a summary
+with BLEU, chrF, chrF++, TER, FLORES spBLEU, optional neural metrics, cost,
+provider, and latency in both JSON and CSV.
 The API key is read from the environment and is never written to reports.
 
 ## Экспериментальная матрица

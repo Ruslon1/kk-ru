@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ from kk_ru.openrouter import (
     estimate_cost,
     usage_cost,
 )
+from kk_ru.metrics import NeuralMetricRuntime, compute_translation_metrics
 
 
 DEFAULT_MODELS = [
@@ -32,6 +34,12 @@ DEFAULT_MODELS = [
     "google/gemma-4-31b-it",
     "qwen/qwen3.8-max-0902",
 ]
+DEFAULT_NEURAL_METRICS = {
+    "comet_model": "Unbabel/wmt22-comet-da",
+    "cometkiwi_model": "Unbabel/wmt22-cometkiwi-da",
+    "xcomet_model": "Unbabel/XCOMET-XL",
+    "bertscore_model": "xlm-roberta-large",
+}
 SYSTEM_PROMPT = "You are a professional translator. Translate from Kazakh to Russian. Return only the Russian translation, with no explanation."
 
 
@@ -83,46 +91,21 @@ def calculate_metrics(
     references: list[str],
     sources: list[str],
     comet_model: str | None = None,
+    cometkiwi_model: str | None = None,
+    xcomet_model: str | None = None,
+    bertscore_model: str | None = None,
+    runtime: NeuralMetricRuntime | None = None,
 ) -> dict[str, Any]:
-    if not (len(hypotheses) == len(references) == len(sources)):
-        raise ValueError("hypotheses, references, and sources must have equal lengths")
-    try:
-        import sacrebleu
-    except ImportError as error:
-        raise RuntimeError("Install sacrebleu to calculate translation metrics") from error
-
-    metrics: dict[str, Any] = {
-        "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
-        "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
-        "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
-        "ter": sacrebleu.corpus_ter(hypotheses, [references]).score,
-    }
-    try:
-        metrics["spbleu"] = sacrebleu.corpus_bleu(
-            hypotheses, [references], tokenize="flores200"
-        ).score
-    except (OSError, TimeoutError) as error:
-        metrics["spbleu_error"] = str(error)
-
-    if comet_model:
-        try:
-            from comet import download_model, load_from_checkpoint
-        except ImportError as error:
-            raise RuntimeError("Install unbabel-comet to calculate COMET metrics") from error
-        checkpoint = download_model(comet_model)
-        scorer = load_from_checkpoint(checkpoint)
-        data = [
-            {"src": source, "mt": hypothesis, "ref": reference}
-            for source, hypothesis, reference in zip(sources, hypotheses, references)
-        ]
-        result = scorer.predict(
-            data,
-            batch_size=8,
-            gpus=int(__import__("torch").cuda.is_available()),
-        )
-        metrics["comet"] = result["system_score"]
-        metrics["comet_model"] = comet_model
-    return metrics
+    return compute_translation_metrics(
+        hypotheses,
+        references,
+        sources,
+        comet_model=comet_model,
+        cometkiwi_model=cometkiwi_model,
+        xcomet_model=xcomet_model,
+        bertscore_model=bertscore_model,
+        runtime=runtime,
+    )
 
 
 def _record_cost(record: dict[str, Any], model: ModelInfo) -> float:
@@ -157,11 +140,41 @@ def _write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _write_summary(path: Path, rows: list[dict[str, Any]]) -> None:
+    _write_json(path.with_suffix(".json"), rows)
+    fields = {"model", "provider", "rows", "cost_usd", "mean_latency_seconds"}
+    flattened = []
+    for row in rows:
+        item = {key: value for key, value in row.items() if key != "metrics"}
+        for key, value in (row.get("metrics") or {}).items():
+            column = f"metric_{key}"
+            item[column] = value if isinstance(value, (str, int, float, bool)) else json.dumps(value, ensure_ascii=False)
+            fields.add(column)
+        flattened.append(item)
+    with path.with_suffix(".csv").open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=sorted(fields))
+        writer.writeheader()
+        writer.writerows(flattened)
+
+
 def _metrics_if_available(
-    hypotheses: list[str], references: list[str], sources: list[str], comet_model: str | None
+    hypotheses: list[str],
+    references: list[str],
+    sources: list[str],
+    args: argparse.Namespace,
+    runtime: NeuralMetricRuntime,
 ) -> dict[str, Any] | None:
     try:
-        return calculate_metrics(hypotheses, references, sources, comet_model)
+        return calculate_metrics(
+            hypotheses,
+            references,
+            sources,
+            comet_model=args.comet_model,
+            cometkiwi_model=args.cometkiwi_model,
+            xcomet_model=args.xcomet_model,
+            bertscore_model=args.bertscore_model,
+            runtime=runtime,
+        )
     except RuntimeError as error:
         if "Install sacrebleu" not in str(error):
             raise
@@ -178,12 +191,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=0, help="evaluate only the first N rows")
     parser.add_argument("--out", default="reports/openrouter")
     parser.add_argument("--comet-model", default=None, help="optional COMET checkpoint/model identifier")
+    parser.add_argument("--cometkiwi-model", default=None, help="optional reference-free COMETKiwi model identifier")
+    parser.add_argument("--xcomet-model", default=None, help="optional XCOMET model identifier")
+    parser.add_argument("--bertscore-model", default=None, help="optional multilingual BERTScore model identifier")
+    parser.add_argument("--all-metrics", action="store_true", help="enable standard neural metrics in addition to lexical metrics")
     parser.add_argument("--dry-run", action="store_true", help="fetch catalog and print cost estimates without translating")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.all_metrics:
+        for name, default in DEFAULT_NEURAL_METRICS.items():
+            if getattr(args, name) is None:
+                setattr(args, name, default)
     if args.budget_usd <= 0 or args.max_tokens <= 0 or args.limit < 0:
         raise SystemExit("budget and max-tokens must be positive; limit must be non-negative")
     if not args.dry_run and not os.getenv("OPENROUTER_API_KEY"):
@@ -244,18 +265,31 @@ def main() -> int:
         "projected_cost_usd": projected,
         "safety_factor": 1.25,
         "comet_model": args.comet_model,
+        "cometkiwi_model": args.cometkiwi_model,
+        "xcomet_model": args.xcomet_model,
+        "bertscore_model": args.bertscore_model,
+        "all_metrics": args.all_metrics,
         "openrouter_base_url": client.base_url,
+        "catalog_prices": {
+            model_id: {
+                "name": catalog[model_id].name,
+                "prompt": catalog[model_id].prompt_price,
+                "completion": catalog[model_id].completion_price,
+                "context_length": catalog[model_id].context_length,
+            }
+            for model_id in args.models
+        },
     }
     _write_json(manifest_path, manifest)
     total_spent = 0.0
     summary = []
+    metric_runtime = NeuralMetricRuntime()
 
     for model_id in args.models:
         model_info = catalog[model_id]
         log_path = out / f"{model_id.replace('/', '__')}.jsonl"
         completed = load_completed(log_path, model_id, source_hashes)
-        model_records = [completed[index] for index in sorted(completed)]
-        total_spent += sum(_record_cost(record, model_info) for record in model_records)
+        total_spent += sum(_record_cost(record, model_info) for record in completed.values())
         print(f"{model_id}: resuming {len(completed)}/{len(sources)} rows")
         with log_path.open("a", encoding="utf-8") as log:
             for index, (source, reference) in enumerate(pairs):
@@ -319,7 +353,13 @@ def main() -> int:
         ordered = [completed[index] for index in range(len(sources))]
         hypotheses = [record["hypothesis"] for record in ordered]
         _write_json(out / f"{model_id.replace('/', '__')}.translations.json", ordered)
-        metrics = _metrics_if_available(hypotheses, references, sources, args.comet_model)
+        metrics = _metrics_if_available(
+            hypotheses,
+            references,
+            sources,
+            args,
+            metric_runtime,
+        )
         row = {
             "model": model_id,
             "provider": ordered[-1].get("provider") if ordered else None,
@@ -329,10 +369,13 @@ def main() -> int:
             "metrics": metrics,
         }
         summary.append(row)
-        _write_json(out / "summary.json", summary)
+        _write_summary(out / "summary", summary)
         print(json.dumps(row, ensure_ascii=False))
 
-    _write_json(out / "summary.json", summary)
+    manifest["finished_at"] = datetime.now(timezone.utc).isoformat()
+    manifest["spent_usd"] = total_spent
+    _write_json(manifest_path, manifest)
+    _write_summary(out / "summary", summary)
     return 0
 
 
