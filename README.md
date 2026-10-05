@@ -13,6 +13,7 @@ scripts/               # пайплайн данных (download / filter)
 data/                  # сырые / отфильтрованные данные (вне git)
 checkpoints/           # чекпоинты (вне git)
 reports/               # метрики, графики (вне git)
+docs/training-budget.md # токены, batch, VRAM и время обучения
 ```
 
 ## Быстрый старт
