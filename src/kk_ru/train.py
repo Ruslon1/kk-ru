@@ -15,7 +15,7 @@ import torch
 import torch.nn.functional as F
 import yaml
 from accelerate import Accelerator
-from accelerate.utils import set_seed
+from accelerate.utils import ProjectConfiguration, set_seed
 
 from .config import Config, load_config
 from .data import build_dataloaders
@@ -39,10 +39,15 @@ def parse_args() -> argparse.Namespace:
 def create_accelerator(cfg: Config, config_path: str) -> Accelerator:
     set_seed(cfg.train.seed)
     precision = cfg.train.precision if isinstance(cfg.train.precision, str) else "no"
+    project_config = ProjectConfiguration(
+        project_dir=cfg.paths.logs,
+        logging_dir=cfg.paths.logs,
+    )
     accelerator = Accelerator(
         gradient_accumulation_steps=cfg.train.grad_accum,
         mixed_precision=precision,
         log_with="tensorboard",
+        project_config=project_config,
     )
     accelerator.init_trackers(
         "kk-ru", config={"config": config_path, "seed": cfg.train.seed}
@@ -302,8 +307,11 @@ class Trainer:
         self.optimizer.zero_grad(set_to_none=True)
         self.global_step += 1
         learning_rate = self.scheduler.get_last_lr()[0]
+        mean_loss = self.accelerator.gather(
+            loss.detach().float().reshape(1)
+        ).mean().item()
         self.accelerator.log(
-            {"loss": loss.detach().float().item(), "learning_rate": learning_rate},
+            {"loss": mean_loss, "learning_rate": learning_rate},
             step=self.global_step,
         )
         if self.global_step % LOG_EVERY == 0:
