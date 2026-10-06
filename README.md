@@ -310,6 +310,7 @@ Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU
 Полный запуск:
 
     tmux new -s qwen-lora
+    mkdir -p runs/qwen3-0.6b-lora
     make docker-qwen-lora 2>&1 | tee runs/qwen3-0.6b-lora/train.log
 
 Продолжение после checkpoint:
