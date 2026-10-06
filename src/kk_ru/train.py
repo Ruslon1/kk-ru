@@ -8,6 +8,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -232,8 +233,12 @@ class Trainer:
         self.total_steps = total_steps
         self.save_root = Path(cfg.paths.checkpoints)
         self.save_root.mkdir(parents=True, exist_ok=True)
+        self.metrics_path = Path(cfg.paths.logs) / "metrics.jsonl"
+        self.metrics_path.parent.mkdir(parents=True, exist_ok=True)
         self.global_step = 0
         self.best_spbleu = -float("inf")
+        self._tokens_since_step = 0
+        self._step_started = time.perf_counter()
 
     def train(self, resume: str | None = None) -> None:
         resume_state = _load_resume_state(resume)
@@ -280,6 +285,7 @@ class Trainer:
             key: value.to(self.accelerator.device, non_blocking=True)
             for key, value in batch.items()
         }
+        self._tokens_since_step += batch["labels"].ne(self.tokenizer.pad_id).sum().item()
         with self.accelerator.accumulate(self.model):
             with self.accelerator.autocast():
                 logits = self.model(
@@ -299,7 +305,7 @@ class Trainer:
                 self._optimizer_step(loss, epoch, batch_index)
 
     def _optimizer_step(self, loss, epoch: int, batch_index: int) -> None:
-        self.accelerator.clip_grad_norm_(
+        grad_norm = self.accelerator.clip_grad_norm_(
             self.model.parameters(), self.cfg.train.clip_grad_norm
         )
         self.optimizer.step()
@@ -307,13 +313,30 @@ class Trainer:
         self.optimizer.zero_grad(set_to_none=True)
         self.global_step += 1
         learning_rate = self.scheduler.get_last_lr()[0]
+        elapsed = max(time.perf_counter() - self._step_started, 1e-9)
+        token_count = self.accelerator.gather(
+            torch.tensor([self._tokens_since_step], device=self.accelerator.device)
+        ).sum().item()
         mean_loss = self.accelerator.gather(
             loss.detach().float().reshape(1)
         ).mean().item()
-        self.accelerator.log(
-            {"loss": mean_loss, "learning_rate": learning_rate},
-            step=self.global_step,
-        )
+        metrics = {
+            "loss": mean_loss,
+            "learning_rate": learning_rate,
+            "grad_norm": float(grad_norm),
+            "step_time": elapsed,
+            "tokens_per_second": token_count / elapsed,
+        }
+        if torch.cuda.is_available():
+            metrics["gpu_memory_allocated_gb"] = torch.cuda.memory_allocated() / 2**30
+            metrics["gpu_memory_reserved_gb"] = torch.cuda.memory_reserved() / 2**30
+        self.accelerator.log(metrics, step=self.global_step)
+        if self.accelerator.is_main_process:
+            with self.metrics_path.open("a", encoding="utf-8") as file:
+                file.write(json.dumps({"step": self.global_step, **metrics}) + "\n")
+                file.flush()
+        self._tokens_since_step = 0
+        self._step_started = time.perf_counter()
         if self.global_step % LOG_EVERY == 0:
             self.accelerator.print(
                 f"epoch {epoch} step {self.global_step}/{self.total_steps} "

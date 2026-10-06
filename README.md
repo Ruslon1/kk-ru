@@ -232,7 +232,10 @@ loss и метрики при оценке. Для загрузки GPU откр
 watch -n 1 nvidia-smi
 ```
 
-TensorBoard события пишутся в `runs/<model>`. Открой ещё один терминал на сервере:
+TensorBoard события пишутся в `runs/<model>/kk-ru`, а построчный резервный лог
+optimizer steps — в `runs/<model>/metrics.jsonl`. В JSONL сохраняются loss,
+learning rate, gradient norm, время шага, throughput токенов и VRAM текущего
+процесса. Открой ещё один терминал на сервере:
 
 ```bash
 docker run --rm -it -p 6006:6006 \
