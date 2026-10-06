@@ -2,6 +2,7 @@
 # Pin exact versions after a working install: pip freeze > requirements.lock.txt
 torch
 transformers
+peft
 accelerate
 datasets
 sentencepiece

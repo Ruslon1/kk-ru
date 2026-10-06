@@ -283,3 +283,46 @@ make benchmark
 
 Каждый запуск пишет `resolved_config.yaml` и `run_manifest.json` в каталог модели.
 Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU и время старта.
+
+### LoRA fine-tuning Qwen3-0.6B
+
+Для отдельного эксперимента с decoder-only Qwen используется LoRA. Базовые веса
+не меняются: adapter сохраняется в checkpoints/qwen3-0.6b-lora, а TensorBoard
+пишет в checkpoints/qwen3-0.6b-lora/runs.
+
+Сначала проверь корпус и собери образ:
+
+    make docker-build
+    make docker-check MODEL=p0 GPUS=8
+
+Перед полным прогоном сделай короткий DDP smoke:
+
+    docker run --rm --gpus all --ipc=host --shm-size=16g \
+      -v "$PWD/data:/workspace/kk-ru/data" \
+      -v "$PWD/checkpoints:/workspace/kk-ru/checkpoints" \
+      -v "$PWD/runs:/workspace/kk-ru/runs" \
+      -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+      kk-ru:cuda128 accelerate launch --num_processes 8 \
+      scripts/finetune_qwen.py --limit 1000 --eval-limit 20 --max-steps 5 \
+      --batch-size 1 --grad-accum 1 --eval-steps 5 --save-steps 5 \
+      --output checkpoints/qwen3-0.6b-lora-smoke
+
+Полный запуск:
+
+    tmux new -s qwen-lora
+    make docker-qwen-lora 2>&1 | tee runs/qwen3-0.6b-lora/train.log
+
+Продолжение после checkpoint:
+
+    docker run --rm --gpus all --ipc=host --shm-size=16g \
+      -v "$PWD/data:/workspace/kk-ru/data" \
+      -v "$PWD/checkpoints:/workspace/kk-ru/checkpoints" \
+      -v "$PWD/runs:/workspace/kk-ru/runs" \
+      -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+      kk-ru:cuda128 accelerate launch --num_processes 8 \
+      scripts/finetune_qwen.py --resume checkpoints/qwen3-0.6b-lora/checkpoint-1000 \
+      --output checkpoints/qwen3-0.6b-lora
+
+Оценка adapter на FLORES devtest:
+
+    make docker-qwen-eval

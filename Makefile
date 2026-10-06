@@ -6,7 +6,7 @@ CHECKPOINT = checkpoints/$(MODEL)
 REPORTS = reports/$(MODEL)
 RUNS = runs/$(MODEL)
 
-.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter test docker-build docker-shell docker-check docker-overfit docker-train docker-eval
+.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter qwen-lora qwen-eval docker-qwen-lora docker-qwen-eval test docker-build docker-shell docker-check docker-overfit docker-train docker-eval
 
 install:
 	pip install -r requirements.txt
@@ -56,6 +56,18 @@ benchmark:
 
 benchmark-openrouter:
 	python scripts/benchmark_openrouter.py --config configs/p0.yaml --split devtest --budget-usd 8.75 --dry-run
+
+qwen-lora:
+	accelerate launch --num_processes $(GPUS) scripts/finetune_qwen.py --output checkpoints/qwen3-0.6b-lora
+
+qwen-eval:
+	python scripts/evaluate_qwen.py --adapter checkpoints/qwen3-0.6b-lora --output reports/qwen3-0.6b-lora
+
+docker-qwen-lora:
+	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/runs:/workspace/kk-ru/runs" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 accelerate launch --num_processes $(GPUS) scripts/finetune_qwen.py --output checkpoints/qwen3-0.6b-lora --batch-size 4 --grad-accum 8
+
+docker-qwen-eval:
+	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 python3 scripts/evaluate_qwen.py --adapter checkpoints/qwen3-0.6b-lora --output reports/qwen3-0.6b-lora
 
 test:
 	PYTHONPATH=src python -m unittest discover -s tests -v
