@@ -59,7 +59,7 @@ accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_bat
 | Оценка | `make eval` |
 | Проверить окружение | `make check-env` |
 | Собрать Docker | `make docker-build` |
-| Запустить Docker-обучение | `make docker-train GPUS=8` |
+| Запустить Docker-обучение | `make docker-train GPUS=5` |
 | Сравнить checkpoints | `make benchmark` |
 | Проверить OpenRouter-модели и стоимость без перевода | `make benchmark-openrouter` |
 | Запустить тесты | `make test` |
@@ -120,7 +120,7 @@ accelerate launch --num_processes 1 -m kk_ru.train \
 ## Обучение на Linux с NVIDIA Docker
 
 Первый запуск не гарантирован «в один клик»: на сервере должны быть Linux x86_64,
-совместимый NVIDIA driver, Docker с NVIDIA Container Toolkit, восемь доступных GPU
+совместимый NVIDIA driver, Docker с NVIDIA Container Toolkit, пять RTX 4090 (24 GB на GPU)
 и подготовленные файлы данных. Проверь сервер до переноса файлов:
 
 ```bash
@@ -182,10 +182,10 @@ make docker-build
 gzip -dc kk-ru-cuda128.tar.gz | docker load
 ```
 
-Проверь, что Docker видит все восемь GPU и необходимые файлы для P0:
+Проверь, что Docker видит все пять GPU и необходимые файлы для P0:
 
 ```bash
-make docker-check MODEL=p0 GPUS=8
+make docker-check MODEL=p0 GPUS=5
 ```
 
 Если проверка завершилась ошибкой, не запускай длинное обучение: исправь указанную
@@ -202,16 +202,16 @@ optimizer steps и пишет изолированные результаты в
 make docker-overfit
 ```
 
-Основной эксперимент P0 на восьми одинаковых GPU:
+Основной эксперимент P0 на пяти RTX 4090:
 
 ```bash
-make docker-train MODEL=p0 GPUS=8
+make docker-train MODEL=p0 GPUS=5
 ```
 
 Доступны `MODEL=small`, `MODEL=p0` и `MODEL=large`. По умолчанию это три разных
 конфига; для первого полного эксперимента используй P0. Аргумент `GPUS` должен
 совпадать с числом GPU, которые будут участвовать в запуске. Если на сервере есть
-дополнительная A100, начни с восьми одинаковых 5090; смешение разных GPU делает
+дополнительная A100, используй пять одинаковых RTX 4090; смешение разных GPU делает
 скорость обучения менее предсказуемой.
 
 Снизить micro-batch при нехватке памяти или переопределить другие параметры можно
@@ -219,7 +219,7 @@ make docker-train MODEL=p0 GPUS=8
 сохраняет прежний effective batch:
 
 ```bash
-make docker-train MODEL=p0 GPUS=8 \
+make docker-train MODEL=p0 GPUS=5 \
   OPTS="train.micro_batch_per_gpu=8 train.grad_accum=8"
 ```
 
@@ -258,7 +258,7 @@ ssh -L 6006:localhost:6006 USER@SERVER
 Продолжить с сохранённого шага можно так:
 
 ```bash
-make docker-train MODEL=p0 GPUS=8 RESUME=checkpoints/p0/step-2000
+make docker-train MODEL=p0 GPUS=5 RESUME=checkpoints/p0/step-2000
 ```
 
 Замени `step-2000` на существующий checkpoint. Возобновление использует сохранённые
@@ -293,7 +293,7 @@ Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU
 Сначала проверь корпус и собери образ:
 
     make docker-build
-    make docker-check MODEL=p0 GPUS=8
+    make docker-check MODEL=p0 GPUS=5
 
 Перед полным прогоном сделай короткий DDP smoke:
 
@@ -302,7 +302,7 @@ Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU
       -v "$PWD/checkpoints:/workspace/kk-ru/checkpoints" \
       -v "$PWD/runs:/workspace/kk-ru/runs" \
       -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
-      kk-ru:cuda128 accelerate launch --num_processes 8 \
+      kk-ru:cuda128 accelerate launch --multi_gpu --num_processes 5 \
       scripts/finetune_qwen.py --limit 1000 --eval-limit 20 --max-steps 5 \
       --batch-size 1 --grad-accum 1 --eval-steps 5 --save-steps 5 \
       --output checkpoints/qwen3-0.6b-lora-smoke
@@ -320,7 +320,7 @@ Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU
       -v "$PWD/checkpoints:/workspace/kk-ru/checkpoints" \
       -v "$PWD/runs:/workspace/kk-ru/runs" \
       -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
-      kk-ru:cuda128 accelerate launch --num_processes 8 \
+      kk-ru:cuda128 accelerate launch --multi_gpu --num_processes 5 \
       scripts/finetune_qwen.py --resume checkpoints/qwen3-0.6b-lora/checkpoint-1000 \
       --output checkpoints/qwen3-0.6b-lora
 
