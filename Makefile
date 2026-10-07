@@ -5,6 +5,13 @@ CONFIG = configs/$(MODEL).yaml
 CHECKPOINT = checkpoints/$(MODEL)
 REPORTS = reports/$(MODEL)
 RUNS = runs/$(MODEL)
+QWEN_OUTPUT ?= checkpoints/qwen3-0.6b-lora
+QWEN_BATCH ?= 4
+QWEN_GRAD_ACCUM ?= 8
+QWEN_ARGS ?=
+QWEN_ADAPTER ?= checkpoints/qwen3-0.6b-lora
+QWEN_EVAL_OUT ?= reports/qwen3-0.6b-lora
+QWEN_EVAL_ARGS ?=
 
 .PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter qwen-lora qwen-eval docker-qwen-lora docker-qwen-eval test docker-build docker-shell docker-check docker-overfit docker-train docker-eval
 
@@ -64,10 +71,10 @@ qwen-eval:
 	python scripts/evaluate_qwen.py --adapter checkpoints/qwen3-0.6b-lora --output reports/qwen3-0.6b-lora
 
 docker-qwen-lora:
-	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/runs:/workspace/kk-ru/runs" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 accelerate launch --num_processes $(GPUS) scripts/finetune_qwen.py --output checkpoints/qwen3-0.6b-lora --batch-size 4 --grad-accum 8
+	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/runs:/workspace/kk-ru/runs" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 accelerate launch --num_processes $(GPUS) scripts/finetune_qwen.py --output $(QWEN_OUTPUT) --batch-size $(QWEN_BATCH) --grad-accum $(QWEN_GRAD_ACCUM) $(QWEN_ARGS)
 
 docker-qwen-eval:
-	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 python3 scripts/evaluate_qwen.py --adapter checkpoints/qwen3-0.6b-lora --output reports/qwen3-0.6b-lora
+	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 python3 scripts/evaluate_qwen.py --adapter $(QWEN_ADAPTER) --output $(QWEN_EVAL_OUT) $(QWEN_EVAL_ARGS)
 
 test:
 	PYTHONPATH=src python -m unittest discover -s tests -v

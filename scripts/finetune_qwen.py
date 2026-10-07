@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from array import array
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,37 +52,64 @@ def read_pairs(path: str, limit: int = 0) -> list[tuple[str, str]]:
 
 class TranslationDataset(Dataset):
     def __init__(self, path: str, tokenizer, max_length: int, limit: int = 0):
-        self.rows = []
-        for source, target in read_pairs(path, limit):
-            prompt_ids = token_ids(
-                tokenizer,
-                [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": source},
-                ],
-                add_generation_prompt=True,
-            )
-            full_ids = token_ids(
-                tokenizer,
-                [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": source},
-                    {"role": "assistant", "content": target},
-                ],
-                add_generation_prompt=False,
-            )
-            full_ids = full_ids[:max_length]
-            labels = [-100] * min(len(prompt_ids), len(full_ids))
-            labels.extend(full_ids[len(labels) :])
-            labels = labels[: len(full_ids)]
-            if any(label != -100 for label in labels):
-                self.rows.append({"input_ids": full_ids, "labels": labels})
+        self.path = str(path)
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+        self.offsets = array("Q")
+        with Path(path).open("rb") as file:
+            while True:
+                offset = file.tell()
+                line = file.readline()
+                if not line:
+                    break
+                if b"\t" in line and line.rstrip(b"\n").split(b"\t", 1)[0]:
+                    self.offsets.append(offset)
+                    if limit and len(self.offsets) >= limit:
+                        break
+        self._file = None
 
     def __len__(self):
-        return len(self.rows)
+        return len(self.offsets)
 
     def __getitem__(self, index):
-        return self.rows[index]
+        if self._file is None:
+            self._file = open(self.path, "rb")
+        self._file.seek(self.offsets[index])
+        source, separator, target = self._file.readline().decode("utf-8").rstrip("\n").partition("\t")
+        if not separator or not source or not target:
+            raise ValueError(f"invalid training row at byte offset {self.offsets[index]}")
+        prompt_ids = token_ids(
+            self.tokenizer,
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": source},
+            ],
+            add_generation_prompt=True,
+        )
+        full_ids = token_ids(
+            self.tokenizer,
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": source},
+                {"role": "assistant", "content": target},
+            ],
+            add_generation_prompt=False,
+        )[: self.max_length]
+        labels = [-100] * min(len(prompt_ids), len(full_ids))
+        labels.extend(full_ids[len(labels) :])
+        labels = labels[: len(full_ids)]
+        if not any(label != -100 for label in labels):
+            return None
+        return {"input_ids": full_ids, "labels": labels}
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_file"] = None
+        return state
+
+    def __del__(self):
+        if getattr(self, "_file", None) is not None:
+            self._file.close()
 
 
 @dataclass
@@ -89,6 +117,9 @@ class Collator:
     pad_id: int
 
     def __call__(self, rows):
+        rows = [row for row in rows if row is not None]
+        if not rows:
+            raise ValueError("batch contains no examples with target tokens")
         length = max(len(row["input_ids"]) for row in rows)
         input_ids = torch.full((len(rows), length), self.pad_id, dtype=torch.long)
         labels = torch.full((len(rows), length), -100, dtype=torch.long)

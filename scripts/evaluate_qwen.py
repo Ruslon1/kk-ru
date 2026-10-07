@@ -45,6 +45,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
