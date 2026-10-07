@@ -30,7 +30,7 @@ data:
   prefetch_factor: 2
 train:
   precision: bf16
-  micro_batch_per_gpu: 24
+  micro_batch_per_gpu: 16
   grad_accum: 4
   epochs: 3
   optimizer: adamw
