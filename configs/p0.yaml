@@ -24,7 +24,7 @@ data:
   train_tsv: data/filtered/train.kk-ru.tsv
   eval_dev: data/eval/flores_plus/dev.kk-ru.tsv
   eval_test: data/eval/flores_plus/devtest.kk-ru.tsv
-  num_workers: 4
+  num_workers: 6
   pin_memory: true
   persistent_workers: true
   prefetch_factor: 2
