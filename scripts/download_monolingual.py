@@ -4,21 +4,32 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
+import io
 import json
 import re
 import sqlite3
 import sys
 import unicodedata
+import urllib.request
 from pathlib import Path
 from typing import Iterable, Iterator
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATASET = "kz-transformers/multidomain-kazakh-dataset"
-DEFAULT_CONFIG = "default"
+DEFAULT_CONFIG = ""
+MDBKD_REVISION = "7a1fcdf9830b1c34b44b3038aafb672447f41890"
+MDBKD_FILES = (
+    "leipzig.csv",
+    "cc100-monolingual-crawled-data.csv",
+    "oscar.csv",
+    "kazakhNews.csv",
+    "kazakhBooks.csv",
+)
 DEFAULT_OUTPUT = ROOT / "data" / "monolingual" / "kazakh.sentences.txt"
 WS = re.compile(r"\s+")
-SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?…])\s+|\n+")
+SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?…])(?:\s+|(?=[«“\"(A-ZА-ЯӘҒҚҢӨҰҮҺІ]))|\n+")
 
 
 def normalize(text: str) -> str:
@@ -44,13 +55,19 @@ def looks_like_kazakh(sentence: str, min_chars: int, max_chars: int) -> bool:
     kazakh_letters = set("әғқңөұүһіӘҒҚҢӨҰҮҺІ")
     cyrillic = sum(char.lower() in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" for char in letters)
     kazakh = sum(char in kazakh_letters for char in letters)
-    # A Cyrillic sentence without Kazakh-specific letters can still be Kazakh;
-    # this check only rejects clearly non-Cyrillic or mostly Latin noise.
-    return cyrillic + kazakh >= max(3, len(letters) // 2)
+    return kazakh > 0 and cyrillic + kazakh >= max(3, len(letters) // 2)
 
 
 def sentence_hash(sentence: str) -> bytes:
-    return hashlib.sha256(sentence.encode("utf-8")).digest()
+    return hashlib.sha256(normalize(sentence).casefold().encode("utf-8")).digest()
+
+
+def file_hash(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def add_existing(conn: sqlite3.Connection, paths: Iterable[Path]) -> int:
@@ -70,6 +87,14 @@ def add_existing(conn: sqlite3.Connection, paths: Iterable[Path]) -> int:
 
 
 def load_rows(dataset: str, config: str, split: str):
+    if dataset == DEFAULT_DATASET:
+        for name in MDBKD_FILES:
+            url = f"https://huggingface.co/datasets/{dataset}/resolve/{MDBKD_REVISION}/{name}"
+            print(f"streaming {name}", file=sys.stderr, flush=True)
+            with urllib.request.urlopen(url) as response:
+                text = io.TextIOWrapper(response, encoding="utf-8-sig", newline="")
+                yield from csv.DictReader(text)
+        return
     try:
         from datasets import load_dataset
     except ImportError as exc:
@@ -89,10 +114,15 @@ def extract(args: argparse.Namespace) -> dict:
     conn = sqlite3.connect(db_path)
     conn.execute("CREATE TABLE IF NOT EXISTS seen (value BLOB PRIMARY KEY)")
     existing = add_existing(conn, [Path(path) for path in args.existing]) if not args.resume else 0
-    documents = sentences = written = 0
+    written = add_existing(conn, [output]) if args.resume and output.exists() else 0
+    documents = sentences = 0
     with output.open("a" if args.resume else "w", encoding="utf-8") as file:
         for row in load_rows(args.dataset, args.config, args.split):
             documents += 1
+            if documents % 100_000 == 0:
+                print(f"scanned {documents:,} documents | written {written:,}", file=sys.stderr)
+            if row.get("predicted_language") not in (None, "kaz"):
+                continue
             text = row.get(args.text_field, "")
             for sentence in split_sentences(text):
                 if not looks_like_kazakh(sentence, args.min_chars, args.max_chars):
@@ -116,6 +146,8 @@ def extract(args: argparse.Namespace) -> dict:
     conn.close()
     manifest = {
         "dataset": args.dataset,
+        "dataset_revision": MDBKD_REVISION if args.dataset == DEFAULT_DATASET else None,
+        "source_files": list(MDBKD_FILES) if args.dataset == DEFAULT_DATASET else None,
         "config": args.config,
         "split": args.split,
         "text_field": args.text_field,
@@ -123,6 +155,7 @@ def extract(args: argparse.Namespace) -> dict:
         "documents_read": documents,
         "sentences_after_filter": sentences,
         "sentences_written": written,
+        "output_sha256": file_hash(output),
         "existing_paths": args.existing,
         "existing_sentences_indexed": existing,
         "license_note": "Verify the dataset license before redistributing or training a commercial model.",
@@ -140,7 +173,15 @@ def main() -> None:
     parser.add_argument("--split", default="train")
     parser.add_argument("--text-field", default="text")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--existing", action="append", default=[str(ROOT / "data/filtered/train.kk-ru.tsv")])
+    parser.add_argument(
+        "--existing",
+        action="append",
+        default=[
+            str(ROOT / "data/filtered/train.kk-ru.tsv"),
+            str(ROOT / "data/eval/flores_plus/dev.kk-ru.tsv"),
+            str(ROOT / "data/eval/flores_plus/devtest.kk-ru.tsv"),
+        ],
+    )
     parser.add_argument("--limit", type=int, default=4_000_000)
     parser.add_argument("--min-chars", type=int, default=20)
     parser.add_argument("--max-chars", type=int, default=1_000)
