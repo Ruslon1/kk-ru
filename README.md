@@ -38,6 +38,25 @@ make train
 make eval
 ```
 
+## Дополнительный казахский монолингвальный текст
+
+Для синтетического расширения можно стримить предложения из
+`kz-transformers/multidomain-kazakh-dataset` (около 25 млн текстов) и убрать
+совпадения с текущим параллельным корпусом:
+
+```bash
+python scripts/download_monolingual.py \
+  --output data/monolingual/kazakh.sentences.txt \
+  --limit 4000000 \
+  --existing data/filtered/train.kk-ru.tsv
+```
+
+Скрипт не скачивает весь датасет, пишет предложения построчно и сохраняет
+`kazakh.sentences.txt.manifest.json` с параметрами выгрузки. Для резервного
+источника можно указать `--dataset HuggingFaceFW/fineweb-2 --config kaz_Cyrl`.
+Лицензию выбранного источника нужно проверить перед публикацией и обучением
+коммерческой модели.
+
 ## Конфиг и переопределения
 
 Один YAML — `configs/p0.yaml`. Для свупов править файл не обязательно:
