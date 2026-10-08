@@ -57,6 +57,16 @@ python scripts/download_monolingual.py \
 Лицензию выбранного источника нужно проверить перед публикацией и обучением
 коммерческой модели.
 
+Для сравнения переводчиков на фиксированной выборке:
+
+```bash
+python scripts/prepare_translation_benchmark.py
+```
+
+Команда создаёт `data/benchmark/translation_candidates.tsv`: FLORES dev/devtest,
+5 000 gold-пар из train и 2 000 монолингвальных предложений. Для строк из
+`monolingual` поле `ru` пустое и используется только для quality filtering.
+
 ## Конфиг и переопределения
 
 Один YAML — `configs/p0.yaml`. Для свупов править файл не обязательно:
