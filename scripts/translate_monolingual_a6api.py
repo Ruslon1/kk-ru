@@ -122,6 +122,7 @@ def main() -> None:
     parser.add_argument("--model", default="gpt-6-luna")
     parser.add_argument("--base-url", default="https://api.a6api.com/v1")
     parser.add_argument("--api-key-env", default="A6API_API_KEY")
+    parser.add_argument("--api-keys-env", default="A6API_API_KEYS", help="Comma/newline-separated keys; falls back to --api-key-env")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--max-tokens", type=int, default=4096)
@@ -131,9 +132,14 @@ def main() -> None:
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--limit", type=int, default=0)
     args = parser.parse_args()
-    api_key = os.getenv(args.api_key_env)
-    if not api_key:
-        raise SystemExit(f"Set {args.api_key_env}; the key is never written to disk")
+    keys_value = os.getenv(args.api_keys_env, "")
+    api_keys = [key.strip() for key in keys_value.replace("\n", ",").split(",") if key.strip()]
+    if not api_keys:
+        single_key = os.getenv(args.api_key_env)
+        if single_key:
+            api_keys = [single_key]
+    if not api_keys:
+        raise SystemExit(f"Set {args.api_keys_env} or {args.api_key_env}; keys are never written to disk")
     if args.batch_size < 1 or args.workers < 1:
         raise SystemExit("--batch-size and --workers must be positive")
 
@@ -151,11 +157,16 @@ def main() -> None:
     batch = []
     pending = 0
     batches = 0
+    key_cursor = 0
     with args.out.open("a", encoding="utf-8") as output:
         def flush_group(group):
-            nonlocal batches
+            nonlocal batches, key_cursor
             with ThreadPoolExecutor(max_workers=len(group)) as pool:
-                futures = {pool.submit(translate_batch_records, args, current_batch, api_key): current_batch for current_batch in group}
+                futures = {}
+                for current_batch in group:
+                    key = api_keys[key_cursor % len(api_keys)]
+                    key_cursor += 1
+                    futures[pool.submit(translate_batch_records, args, current_batch, key)] = current_batch
                 for future in as_completed(futures):
                     batch = futures[future]
                     try:
