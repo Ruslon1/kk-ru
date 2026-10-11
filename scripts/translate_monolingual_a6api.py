@@ -89,6 +89,32 @@ def call_with_retries(args, sources: list[str], api_key: str) -> dict:
     raise RuntimeError(str(last_error))
 
 
+def translate_batch_records(args, batch: list[tuple[int, str]], api_key: str) -> list[dict]:
+    """Translate a batch, splitting only when the model returns malformed output."""
+    try:
+        result = call_with_retries(args, [source for _, source in batch], api_key)
+        return [
+            {
+                "index": index,
+                "source": source,
+                "translation": result["translations"][offset],
+                "status": "ok",
+                "usage": result["usage"],
+                "latency_sec": result["latency_sec"],
+                "response_id": result["response_id"],
+                "model": result["model"],
+            }
+            for offset, (index, source) in enumerate(batch)
+        ]
+    except RuntimeError as error:
+        message = str(error)
+        malformed = any(marker in message for marker in ("Expected JSON array", "Expecting value", "Unterminated string"))
+        if not malformed or len(batch) <= 16:
+            raise
+        midpoint = len(batch) // 2
+        return translate_batch_records(args, batch[:midpoint], api_key) + translate_batch_records(args, batch[midpoint:], api_key)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, required=True)
@@ -129,15 +155,11 @@ def main() -> None:
         def flush_group(group):
             nonlocal batches
             with ThreadPoolExecutor(max_workers=len(group)) as pool:
-                futures = {pool.submit(call_with_retries, args, [source for _, source in current_batch], api_key): current_batch for current_batch in group}
+                futures = {pool.submit(translate_batch_records, args, current_batch, api_key): current_batch for current_batch in group}
                 for future in as_completed(futures):
                     batch = futures[future]
                     try:
-                        result = future.result()
-                        records = [
-                            {"index": index, "source": source, "translation": result["translations"][offset], "status": "ok", "usage": result["usage"], "latency_sec": result["latency_sec"], "response_id": result["response_id"], "model": result["model"]}
-                            for offset, (index, source) in enumerate(batch)
-                        ]
+                        records = future.result()
                     except Exception as error:
                         records = [{"index": index, "source": source, "status": "error", "error": str(error)} for index, source in batch]
                     output.writelines(json.dumps(record, ensure_ascii=False) + "\n" for record in records)
