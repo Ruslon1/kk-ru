@@ -18,8 +18,7 @@ INSTRUCTIONS = (
 )
 
 
-def read_sources(path: Path, start: int, limit: int) -> list[tuple[int, str]]:
-    rows = []
+def iter_sources(path: Path, start: int, limit: int):
     with path.open(encoding="utf-8") as file:
         for index, line in enumerate(file):
             if index < start:
@@ -28,8 +27,7 @@ def read_sources(path: Path, start: int, limit: int) -> list[tuple[int, str]]:
                 break
             source = line.rstrip("\n").strip()
             if source:
-                rows.append((index, source))
-    return rows
+                yield index, source
 
 
 def response_text(payload: dict) -> str:
@@ -113,7 +111,6 @@ def main() -> None:
     if args.batch_size < 1 or args.workers < 1:
         raise SystemExit("--batch-size and --workers must be positive")
 
-    rows = read_sources(args.input, args.start, args.limit)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     completed = set()
     if args.out.exists():
@@ -125,15 +122,14 @@ def main() -> None:
                     continue
                 if record.get("status") == "ok":
                     completed.add(record["index"])
-    pending = [(index, source) for index, source in rows if index not in completed]
-    batches = [pending[pos : pos + args.batch_size] for pos in range(0, len(pending), args.batch_size)]
-    print(f"input rows: {len(rows):,}; completed: {len(completed):,}; pending: {len(pending):,}; batches: {len(batches):,}", flush=True)
-
+    batch = []
+    pending = 0
+    batches = 0
     with args.out.open("a", encoding="utf-8") as output:
-        for group_start in range(0, len(batches), args.workers):
-            group = batches[group_start : group_start + args.workers]
+        def flush_group(group):
+            nonlocal batches
             with ThreadPoolExecutor(max_workers=len(group)) as pool:
-                futures = {pool.submit(call_with_retries, args, [source for _, source in batch], api_key): batch for batch in group}
+                futures = {pool.submit(call_with_retries, args, [source for _, source in current_batch], api_key): current_batch for current_batch in group}
                 for future in as_completed(futures):
                     batch = futures[future]
                     try:
@@ -148,6 +144,25 @@ def main() -> None:
                     output.flush()
                     ok = sum(record["status"] == "ok" for record in records)
                     print(f"processed {len(records):,} rows ({ok:,} ok); last index {records[-1]['index']}", flush=True)
+            batches += len(group)
+
+        group = []
+        for index, source in iter_sources(args.input, args.start, args.limit):
+            if index in completed:
+                continue
+            batch.append((index, source))
+            pending += 1
+            if len(batch) == args.batch_size:
+                group.append(batch)
+                batch = []
+                if len(group) == args.workers:
+                    flush_group(group)
+                    group = []
+        if batch:
+            group.append(batch)
+        if group:
+            flush_group(group)
+    print(f"completed before run: {len(completed):,}; pending rows: {pending:,}; batches sent: {batches:,}", flush=True)
 
 
 if __name__ == "__main__":
