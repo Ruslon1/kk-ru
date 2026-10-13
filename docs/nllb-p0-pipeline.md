@@ -134,12 +134,12 @@ python scripts/benchmark.py --configs configs/p0.yaml \
   --out reports/p0-before/devtest --report-dir reports/p0-before/devtest --spbleu
 ```
 
-The benchmark reports BLEU, chrF, chrF++, and spBLEU when the FLORES tokenizer
-is available. `--out` stores the comparison table and `--report-dir` stores
-hypotheses and per-split metrics. The training JSONL logs token loss.
+The benchmark reports BLEU, chrF, chrF++, TER, and spBLEU when the FLORES
+tokenizer is available. `--out` stores the comparison table and `--report-dir`
+stores hypotheses and per-split metrics. The training JSONL logs token loss.
 Evaluation loss is not currently computed by the benchmark, so compare the
-same lexical metrics and training loss curves; do not present loss as a devtest
-metric.
+same translation metrics and training loss curves; do not present loss as a
+devtest metric.
 
 ## 6. Train three full merged-data epochs
 

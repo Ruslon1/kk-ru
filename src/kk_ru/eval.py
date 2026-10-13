@@ -141,6 +141,7 @@ def compute_metrics(
         "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
         "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
         "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
+        "ter": sacrebleu.corpus_ter(hypotheses, [references]).score,
     }
     if compute_spbleu:
         try:

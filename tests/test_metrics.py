@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from kk_ru.metrics import compute_translation_metrics
+from kk_ru.eval import compute_metrics
 
 
 class Score:
@@ -34,6 +35,12 @@ class MetricsTests(unittest.TestCase):
             metrics,
             {"bleu": 20, "chrf": 40, "chrf++": 30, "ter": 50, "spbleu": 10},
         )
+
+    def test_p0_evaluation_includes_ter(self):
+        with patch.dict(sys.modules, {"sacrebleu": FakeSacrebleu}):
+            metrics = compute_metrics(["перевод"], ["эталон"])
+
+        self.assertEqual(metrics["ter"], 50)
 
     def test_records_optional_metric_import_errors(self):
         with patch.dict(sys.modules, {"sacrebleu": FakeSacrebleu, "comet": None}):
