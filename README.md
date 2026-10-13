@@ -67,6 +67,11 @@ python scripts/prepare_translation_benchmark.py
 5 000 gold-пар из train и 2 000 монолингвальных предложений. Для строк из
 `monolingual` поле `ru` пустое и используется только для quality filtering.
 
+Подготовка полного серверного цикла NLLB → merge → продолжение P0 описана в
+[`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md). Она включает resumable
+shards, проверку полноты, benchmark на 6 GPU и три дополнительные эпохи P0 на
+merged-корпусе.
+
 ## Конфиг и переопределения
 
 Один YAML — `configs/p0.yaml`. Для свупов править файл не обязательно:

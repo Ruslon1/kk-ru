@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoints", nargs="+", default=None)
     parser.add_argument("--split", choices=["dev", "devtest"], default="devtest")
     parser.add_argument("--out", default="reports/benchmark")
+    parser.add_argument("--report-dir", help="Directory for hypotheses and per-split metrics")
     parser.add_argument("--spbleu", action="store_true")
     return parser.parse_args()
 
@@ -48,6 +49,8 @@ def main() -> None:
     rows = []
     for config_path, checkpoint_path in zip(args.configs, checkpoints):
         cfg = load_config(config_path)
+        if args.report_dir:
+            cfg.paths.reports = args.report_dir
         tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
         validate_vocab(tokenizer, cfg.model.vocab)
         model = build_model(cfg.model)
