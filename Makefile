@@ -1,4 +1,4 @@
-GPUS ?= 5
+GPUS ?= 6
 PLATFORM ?= linux/amd64
 MODEL ?= p0
 CONFIG = configs/$(MODEL).yaml

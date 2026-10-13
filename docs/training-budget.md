@@ -40,17 +40,17 @@
 `micro_batch_per_gpu` — пары на GPU за один forward/backward.
 `grad_accum` — micro-batch на один optimizer step.
 
-| Конфиг | Параметры | Precision | Micro-batch / GPU | `grad_accum` | Effective batch, 5 GPU | Effective batch, 1 GPU |
+| Конфиг | Параметры | Precision | Micro-batch / GPU | `grad_accum` | Effective batch, 6 GPU | Effective batch, 1 GPU |
 |---|---:|---|---:|---:|---:|---:|
-| `small` | 81 905 024 (~81.9M) | BF16 | 16 | 4 | 320 | 64 |
-| `p0` | 202 016 256 (~202.0M) | BF16 | 16 | 4 | 320 | 64 |
-| `large` | 578 290 432 (~578.3M) | BF16 | 8 | 8 | 320 | 64 |
+| `small` | 81 905 024 (~81.9M) | BF16 | 16 | 4 | 384 | 64 |
+| `p0` | 202 016 256 (~202.0M) | BF16 | 16 | 4 | 384 | 64 |
+| `large` | 578 290 432 (~578.3M) | BF16 | 8 | 8 | 384 | 64 |
 
 ### Optimizer steps
 
 | Запуск | Effective batch | Steps / эпоху | Steps / 3 эпохи | Eval при `eval_every=2000` |
 |---|---:|---:|---:|---:|
-| 5 × RTX 4090, YAML | 320 | ~21 410 | **~64 230** | ~32 |
+| 6 × RTX 4090, YAML | 384 | ~17 842 | **~53 526** | ~26 |
 | 1 A100, YAML | 64 | ~107 048 | **~321 144** | ~160 |
 | 1 A100, batch 512 | 512 | ~13 381 | **~40 143** | ~20 |
 
@@ -81,8 +81,8 @@ make docker-train MODEL=large GPUS=1 OPTS="train.grad_accum=64"
 и CUDA runtime. Это оценка, не замер на конкретной машине. При OOM:
 
 ```bash
-# 5 GPU, effective batch сохраняется
-make docker-train MODEL=large GPUS=5 \
+# 6 GPU, effective batch сохраняется
+make docker-train MODEL=large GPUS=6 \
   OPTS="train.micro_batch_per_gpu=4 train.grad_accum=16"
 ```
 
@@ -92,9 +92,9 @@ make docker-train MODEL=large GPUS=5 \
 Диапазоны не измерены на этом хосте; перед полным запуском нужна калибровка
 на целевых GPU.
 
-Для 5 × RTX 4090 время полного запуска пока не измерено. Оцени его по
-калибровке ниже: около 64 230 optimizer steps на три эпохи для каждого конфига
-при effective batch 320. На каждой RTX 4090 доступно 24 GB VRAM; для `large`
+Для 6 × RTX 4090 время полного запуска пока не измерено. Оцени его по
+калибровке ниже: около 53 526 optimizer steps на три эпохи для каждого конфига
+при effective batch 384. На каждой RTX 4090 доступно 24 GB VRAM; для `large`
 при нехватке памяти используй micro-batch 4 и `grad_accum=16`.
 
 Время включает периодическую оценку на dev (997 предложений). Первый запуск
@@ -103,7 +103,7 @@ make docker-train MODEL=large GPUS=5 \
 Калибровка:
 
 ```bash
-make docker-train MODEL=p0 GPUS=5 \
+make docker-train MODEL=p0 GPUS=6 \
   OPTS="train.max_steps=100 train.epochs=1 train.save_every=0 train.eval_every=0"
 watch -n 1 nvidia-smi
 ```
@@ -111,9 +111,9 @@ watch -n 1 nvidia-smi
 ## Запуски
 
 ```bash
-# 5 × RTX 4090 (24 GB per GPU)
-make docker-train MODEL=p0 GPUS=5
-make docker-train MODEL=large GPUS=5
+# 6 × RTX 4090 (24 GB per GPU)
+make docker-train MODEL=p0 GPUS=6
+make docker-train MODEL=large GPUS=6
 
 # 1 × A100, effective batch 512
 make docker-train MODEL=p0 GPUS=1 OPTS="train.grad_accum=32"
