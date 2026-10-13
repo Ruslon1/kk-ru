@@ -33,7 +33,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", default="configs/p0.yaml")
     parser.add_argument("--opts", nargs="*", default=None, help="dotted overrides, e.g. train.epochs=5")
     parser.add_argument("--overfit", action="store_true", help="train on a 10k-example subset")
-    parser.add_argument("--resume", help="Accelerate checkpoint directory")
+    resume_group = parser.add_mutually_exclusive_group()
+    resume_group.add_argument("--resume", help="Resume the checkpoint cursor and all training state")
+    resume_group.add_argument(
+        "--resume-new-data",
+        help="Load model and optimizer state, restart the data cursor, and create a new schedule",
+    )
     return parser.parse_args()
 
 
@@ -111,16 +116,17 @@ def _save_checkpoint(
     step: int,
     epoch: int,
     batch_index: int,
+    phase_state: dict | None = None,
 ) -> None:
     checkpoint = _checkpoint_path(root, step)
     accelerator.save_state(str(checkpoint))
     if accelerator.is_main_process:
         unwrapped = accelerator.unwrap_model(model)
         torch.save(unwrapped.state_dict(), checkpoint / "model.pt")
-        (checkpoint / "meta.json").write_text(
-            json.dumps({"step": step, "epoch": epoch, "batch_index": batch_index}),
-            encoding="utf-8",
-        )
+        metadata = {"step": step, "epoch": epoch, "batch_index": batch_index}
+        if phase_state:
+            metadata.update(phase_state)
+        (checkpoint / "meta.json").write_text(json.dumps(metadata), encoding="utf-8")
     accelerator.wait_for_everyone()
 
 
@@ -156,7 +162,14 @@ def _prune_checkpoints(root: Path, keep: int = 3) -> None:
 
 def _load_resume_state(checkpoint: str | None) -> dict[str, int]:
     if checkpoint is None:
-        return {"step": 0, "epoch": 0, "batch_index": 0}
+        return {
+            "step": 0,
+            "epoch": 0,
+            "batch_index": 0,
+            "phase_step": 0,
+            "phase_total_steps": 0,
+            "phase": "original",
+        }
     metadata = Path(checkpoint) / "meta.json"
     if not metadata.exists():
         raise FileNotFoundError(f"checkpoint metadata is missing: {metadata}")
@@ -165,7 +178,41 @@ def _load_resume_state(checkpoint: str | None) -> dict[str, int]:
         "step": int(state["step"]),
         "epoch": int(state.get("epoch", 0)),
         "batch_index": int(state.get("batch_index", 0)),
+        "phase_step": int(state.get("phase_step", state["step"])),
+        "phase_total_steps": int(state.get("phase_total_steps", 0)),
+        "phase": str(state.get("phase", "original")),
     }
+
+
+def _phase_start(resume_state: dict, total_steps: int, resume_new_data: bool) -> dict:
+    if resume_new_data:
+        return {
+            "global_step": resume_state["step"],
+            "phase_step": 0,
+            "phase_total_steps": total_steps,
+            "phase": "merged_data",
+            "epoch": 0,
+            "batch_index": 0,
+            "reset_scheduler": True,
+        }
+    return {
+        "global_step": resume_state["step"],
+        "phase_step": resume_state["phase_step"],
+        "phase_total_steps": resume_state["phase_total_steps"] or total_steps,
+        "phase": resume_state["phase"],
+        "epoch": resume_state["epoch"],
+        "batch_index": resume_state["batch_index"],
+        "reset_scheduler": False,
+    }
+
+
+def _reset_scheduler(accelerator, optimizer, scheduler, cfg, total_steps):
+    for group in optimizer.param_groups:
+        group["lr"] = cfg.lr
+        group["initial_lr"] = cfg.lr
+    fresh = build_scheduler(optimizer, cfg, total_steps)
+    scheduler.load_state_dict(fresh.state_dict())
+    return scheduler
 
 
 def _git_revision() -> str | None:
@@ -236,28 +283,46 @@ class Trainer:
         self.metrics_path = Path(cfg.paths.logs) / "metrics.jsonl"
         self.metrics_path.parent.mkdir(parents=True, exist_ok=True)
         self.global_step = 0
+        self.phase_step = 0
+        self.phase_total_steps = total_steps
+        self.phase_name = "original"
         self.best_spbleu = -float("inf")
         self._tokens_since_step = 0
         self._step_started = time.perf_counter()
 
-    def train(self, resume: str | None = None) -> None:
-        resume_state = _load_resume_state(resume)
-        if resume:
-            self.accelerator.load_state(resume)
-        self.global_step = resume_state["step"]
+    def train(self, resume: str | None = None, resume_new_data: str | None = None) -> None:
+        if resume and resume_new_data:
+            raise ValueError("--resume and --resume-new-data are mutually exclusive")
+        checkpoint_path = resume or resume_new_data
+        resume_state = _load_resume_state(checkpoint_path)
+        if checkpoint_path:
+            self.accelerator.load_state(checkpoint_path)
+        phase = _phase_start(resume_state, self.total_steps, resume_new_data is not None)
+        self.global_step = phase["global_step"]
+        if phase["reset_scheduler"]:
+            self.scheduler = _reset_scheduler(
+                self.accelerator, self.optimizer, self.scheduler, self.cfg.train, self.total_steps
+            )
+        self.phase_step = phase["phase_step"]
+        self.phase_total_steps = phase["phase_total_steps"]
+        self.phase_name = phase["phase"]
+        start_epoch = phase["epoch"]
+        start_batch = phase["batch_index"]
         self._log_start()
         self.optimizer.zero_grad(set_to_none=True)
         self.model.train()
 
-        for epoch in range(resume_state["epoch"], self.cfg.train.epochs):
+        last_epoch = start_epoch
+        for epoch in range(start_epoch, self.cfg.train.epochs):
+            last_epoch = epoch
             _set_loader_epoch(self.train_loader, epoch)
             for batch_index, batch in enumerate(self.train_loader):
-                if epoch == resume_state["epoch"] and batch_index < resume_state["batch_index"]:
+                if epoch == start_epoch and batch_index < start_batch:
                     continue
-                if self.global_step >= self.total_steps:
+                if self.phase_step >= self.phase_total_steps:
                     break
                 self._train_batch(batch, epoch, batch_index)
-            if self.global_step >= self.total_steps:
+            if self.phase_step >= self.phase_total_steps:
                 break
 
         _save_checkpoint(
@@ -265,8 +330,9 @@ class Trainer:
             self.model,
             self.save_root,
             self.global_step,
-            epoch + 1,
+            last_epoch + 1,
             0,
+            self._phase_metadata(),
         )
         if self.accelerator.is_main_process:
             self.accelerator.print(
@@ -277,8 +343,16 @@ class Trainer:
     def _log_start(self) -> None:
         self.accelerator.print(f"model params: {count_params(self.model):,}")
         self.accelerator.print(
-            f"train batches/rank: {len(self.train_loader)} | total steps: {self.total_steps}"
+            f"train batches/rank: {len(self.train_loader)} | phase steps: {self.phase_total_steps} | "
+            f"resumed global step: {self.global_step}"
         )
+
+    def _phase_metadata(self) -> dict:
+        return {
+            "phase": self.phase_name,
+            "phase_step": self.phase_step,
+            "phase_total_steps": self.phase_total_steps,
+        }
 
     def _train_batch(self, batch, epoch: int, batch_index: int) -> None:
         batch = {
@@ -312,6 +386,7 @@ class Trainer:
         self.scheduler.step()
         self.optimizer.zero_grad(set_to_none=True)
         self.global_step += 1
+        self.phase_step += 1
         learning_rate = self.scheduler.get_last_lr()[0]
         elapsed = max(time.perf_counter() - self._step_started, 1e-9)
         token_count = self.accelerator.gather(
@@ -339,7 +414,7 @@ class Trainer:
         self._step_started = time.perf_counter()
         if self.global_step % LOG_EVERY == 0:
             self.accelerator.print(
-                f"epoch {epoch} step {self.global_step}/{self.total_steps} "
+                f"epoch {epoch} step {self.phase_step}/{self.phase_total_steps} "
                 f"loss {loss.item():.4f} lr {learning_rate:.2e}"
             )
         if self.cfg.train.save_every and self.global_step % self.cfg.train.save_every == 0:
@@ -355,6 +430,7 @@ class Trainer:
             self.global_step,
             epoch,
             batch_index + 1,
+            self._phase_metadata(),
         )
         if self.accelerator.is_main_process:
             _prune_checkpoints(self.save_root)
@@ -434,7 +510,7 @@ def main() -> None:
         cfg=cfg,
         total_steps=total_steps,
     )
-    trainer.train(resume=args.resume)
+    trainer.train(resume=args.resume, resume_new_data=args.resume_new_data)
 
 
 if __name__ == "__main__":
