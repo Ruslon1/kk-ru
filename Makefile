@@ -5,6 +5,10 @@ CONFIG = configs/$(MODEL).yaml
 CHECKPOINT = checkpoints/$(MODEL)
 REPORTS = reports/$(MODEL)
 RUNS = runs/$(MODEL)
+MONOLINGUAL ?= data/monolingual/kazakh.sentences.txt
+NLLB_MODEL ?= models/nllb-200-3.3B
+NLLB_SHARDS ?= data/synthetic/nllb-rank-shards
+NLLB_BATCH ?= 16
 QWEN_OUTPUT ?= checkpoints/qwen3-0.6b-lora
 QWEN_BATCH ?= 4
 QWEN_GRAD_ACCUM ?= 8
@@ -13,7 +17,7 @@ QWEN_ADAPTER ?= checkpoints/qwen3-0.6b-lora
 QWEN_EVAL_OUT ?= reports/qwen3-0.6b-lora
 QWEN_EVAL_ARGS ?=
 
-.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter qwen-lora qwen-eval docker-qwen-lora docker-qwen-eval test docker-build docker-shell docker-check docker-overfit docker-train docker-eval
+.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter qwen-lora qwen-eval docker-qwen-lora docker-qwen-eval test docker-build docker-shell docker-check docker-overfit docker-train docker-train-merged docker-eval nllb-download nllb-translate nllb-validate merge-synthetic
 
 install:
 	pip install -r requirements.txt
@@ -94,6 +98,24 @@ docker-overfit:
 docker-train:
 	@test -f "$(CONFIG)" || (echo "unknown model: $(MODEL) (expected small, p0, or large)" >&2; exit 2)
 	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/runs:/workspace/kk-ru/runs" kk-ru:cuda128 accelerate launch --multi_gpu --num_processes $(GPUS) -m kk_ru.train --config $(CONFIG) $(if $(strip $(OPTS)),--opts $(OPTS)) $(if $(strip $(RESUME)),--resume $(RESUME))
+
+nllb-download:
+	hf download facebook/nllb-200-3.3B --local-dir $(NLLB_MODEL)
+
+nllb-translate:
+	torchrun --standalone --nproc_per_node=$(GPUS) scripts/translate_nllb.py --input $(MONOLINGUAL) --out-dir $(NLLB_SHARDS) --model $(NLLB_MODEL) --batch-size $(NLLB_BATCH) --bucket-size 2048 --num-beams 4
+
+nllb-validate:
+	python scripts/validate_nllb_shards.py --input $(MONOLINGUAL) --shards $(NLLB_SHARDS) --db data/merged/nllb-validation.sqlite
+
+merge-synthetic:
+	python scripts/merge_synthetic.py --base data/filtered/train.kk-ru.tsv --translations $(NLLB_SHARDS) --out data/merged/train.kk-ru.tsv --db data/merged/train.kk-ru.sqlite
+
+docker-train-merged:
+	@test -n "$(RESUME)" || (echo "set RESUME=checkpoints/.../step-N to the server P0 checkpoint" >&2; exit 2)
+	@test -s "$(RESUME)/meta.json" -a -s "$(RESUME)/model.pt" || (echo "checkpoint is missing meta.json or model.pt: $(RESUME)" >&2; exit 2)
+	@test -s data/merged/train.kk-ru.tsv || (echo "merged corpus is missing: data/merged/train.kk-ru.tsv" >&2; exit 2)
+	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/runs:/workspace/kk-ru/runs" kk-ru:cuda128 accelerate launch --multi_gpu --num_processes $(GPUS) -m kk_ru.train --config configs/p0.yaml --resume-new-data $(RESUME) --opts data.train_tsv=data/merged/train.kk-ru.tsv train.epochs=3 train.max_steps=null paths.checkpoints=checkpoints/p0-merged-3ep paths.logs=runs/p0-merged-3ep paths.reports=reports/p0-merged-3ep
 
 docker-eval:
 	@test -f "$(CONFIG)" || (echo "unknown model: $(MODEL) (expected small, p0, or large)" >&2; exit 2)

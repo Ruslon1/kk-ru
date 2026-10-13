@@ -72,6 +72,22 @@ python scripts/prepare_translation_benchmark.py
 shards, проверку полноты, benchmark на 6 GPU и три дополнительные эпохи P0 на
 merged-корпусе.
 
+Короткий запуск на сервере после распаковки корпуса:
+
+```bash
+make nllb-download
+make nllb-translate
+make nllb-validate
+make merge-synthetic
+make docker-train-merged GPUS=6 RESUME=checkpoints/p0/step-N
+```
+
+Замени `step-N` на папку checkpoint P0 на сервере. `docker-train-merged`
+сам проверит наличие `meta.json`, весов и merged TSV, затем загрузит веса и
+optimizer state и начнёт новую трёхэпоховую фазу с начала merged-корпуса.
+Обычный `make docker-train RESUME=...` продолжает старый cursor и scheduler;
+для расширенного корпуса используй именно `docker-train-merged`.
+
 ## Конфиг и переопределения
 
 Один YAML — `configs/p0.yaml`. Для свупов править файл не обязательно:
