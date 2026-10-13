@@ -40,7 +40,7 @@ class TrainResumeTests(unittest.TestCase):
         old_scheduler.step()
         optimizer_state = optimizer.state[parameter]["step"].clone()
 
-        scheduler = _reset_scheduler(None, optimizer, old_scheduler, config, total_steps=30)
+        scheduler = _reset_scheduler(optimizer, old_scheduler, config, total_steps=30)
 
         self.assertEqual(optimizer.state[parameter]["step"], optimizer_state)
         self.assertEqual(scheduler.last_epoch, 0)

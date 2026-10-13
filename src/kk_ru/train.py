@@ -160,7 +160,7 @@ def _prune_checkpoints(root: Path, keep: int = 3) -> None:
         shutil.rmtree(checkpoint)
 
 
-def _load_resume_state(checkpoint: str | None) -> dict[str, int]:
+def _load_resume_state(checkpoint: str | None) -> dict[str, int | str]:
     if checkpoint is None:
         return {
             "step": 0,
@@ -206,7 +206,7 @@ def _phase_start(resume_state: dict, total_steps: int, resume_new_data: bool) ->
     }
 
 
-def _reset_scheduler(accelerator, optimizer, scheduler, cfg, total_steps):
+def _reset_scheduler(optimizer, scheduler, cfg, total_steps):
     for group in optimizer.param_groups:
         group["lr"] = cfg.lr
         group["initial_lr"] = cfg.lr
@@ -301,7 +301,7 @@ class Trainer:
         self.global_step = phase["global_step"]
         if phase["reset_scheduler"]:
             self.scheduler = _reset_scheduler(
-                self.accelerator, self.optimizer, self.scheduler, self.cfg.train, self.total_steps
+                self.optimizer, self.scheduler, self.cfg.train, self.total_steps
             )
         self.phase_step = phase["phase_step"]
         self.phase_total_steps = phase["phase_total_steps"]
