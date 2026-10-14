@@ -110,7 +110,7 @@ nllb-validate:
 	python scripts/validate_nllb_shards.py --input $(MONOLINGUAL) --shards $(NLLB_SHARDS) --db data/merged/nllb-validation.sqlite
 
 merge-synthetic:
-	python scripts/merge_synthetic.py --base data/filtered/train.kk-ru.tsv --translations $(NLLB_SHARDS) --out data/merged/train.kk-ru.tsv --db data/merged/train.kk-ru.sqlite
+	python scripts/merge_synthetic.py --base data/filtered/train.kk-ru.tsv --translations $(NLLB_SHARDS) --out data/merged/train.kk-ru.tsv --db data/merged/train.kk-ru.sqlite --skip-errors
 
 docker-train-merged:
 	@test -n "$(RESUME)" || (echo "set RESUME=checkpoints/.../step-N to the server P0 checkpoint" >&2; exit 2)
