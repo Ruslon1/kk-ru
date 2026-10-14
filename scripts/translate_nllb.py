@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -20,6 +21,15 @@ def rank_info() -> tuple[int, int, int]:
     )
 
 
+def format_duration(seconds: float) -> str:
+    if seconds <= 0:
+        return "--:--"
+    seconds = int(seconds)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    return f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes:02d}:{seconds:02d}"
+
+
 def iter_rank_sources(path: Path, rank: int, world_size: int, start: int = 0, limit: int = 0):
     end = start + limit if limit else None
     with path.open(encoding="utf-8") as file:
@@ -31,6 +41,20 @@ def iter_rank_sources(path: Path, rank: int, world_size: int, start: int = 0, li
             source = line.rstrip("\r\n").partition("\t")[0].strip()
             if source and index % world_size == rank:
                 yield index, source
+
+
+def count_rank_sources(path: Path, rank: int, world_size: int, start: int = 0, limit: int = 0) -> int:
+    end = start + limit if limit else None
+    count = 0
+    with path.open(encoding="utf-8") as file:
+        for index, line in enumerate(file):
+            if index < start:
+                continue
+            if end is not None and index >= end:
+                break
+            if line.rstrip("\r\n").partition("\t")[0].strip() and index % world_size == rank:
+                count += 1
+    return count
 
 
 def truncate_partial_jsonl(path: Path) -> None:
@@ -131,6 +155,9 @@ def main() -> None:
     dtype = torch.float16 if args.dtype == "float16" else torch.bfloat16
 
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    from transformers.utils import logging as transformers_logging
+
+    transformers_logging.set_verbosity_error()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, src_lang="kaz_Cyrl", tgt_lang="rus_Cyrl", trust_remote_code=args.trust_remote_code)
     target_id = tokenizer.convert_tokens_to_ids("rus_Cyrl")
@@ -148,6 +175,7 @@ def main() -> None:
     shard_path = args.out_dir / f"rank-{rank:05d}.jsonl"
     metrics_path = args.out_dir / f"rank-{rank:05d}.metrics.json"
     completed = load_completed(shard_path)
+    total = count_rank_sources(args.input, rank, world_size, args.start, args.limit)
     rows = (
         row
         for row in iter_rank_sources(args.input, rank, world_size, args.start, args.limit)
@@ -158,6 +186,27 @@ def main() -> None:
     processed = 0
     ok = 0
     errors = 0
+    last_report = started
+
+    def report(force: bool = False) -> None:
+        nonlocal last_report
+        if rank != 0:
+            return
+        now = time.perf_counter()
+        if not force and now - last_report < 5:
+            return
+        elapsed = now - started
+        done = len(completed) + processed
+        remaining = max(total - done, 0)
+        rate = processed / elapsed if elapsed else 0.0
+        eta = remaining / rate if rate else 0.0
+        percent = done / total * 100 if total else 100.0
+        message = (
+            f"rank {rank}: {done:,}/{total:,} ({percent:5.1f}%) | "
+            f"{rate:,.1f} rows/s | осталось {remaining:,} | ETA {format_duration(eta)}"
+        )
+        print(message, end="\r", file=sys.stderr, flush=True)
+        last_report = now
 
     def translate_batch(batch):
         sources = [source for _, source in batch]
@@ -207,7 +256,7 @@ def main() -> None:
         batch_ok = sum(record["status"] == "ok" for record in records)
         ok += batch_ok
         errors += len(records) - batch_ok
-        print(f"rank {rank}/{world_size}: processed={processed:,} ok={ok:,} errors={errors:,} last_index={records[-1]['index']}", flush=True)
+        report()
 
     elapsed = time.perf_counter() - started
     metrics = {
@@ -223,7 +272,10 @@ def main() -> None:
         "batch_size": args.batch_size,
     }
     metrics_path.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(metrics, indent=2), flush=True)
+    report(force=True)
+    if rank == 0:
+        print(file=sys.stderr)
+        print(json.dumps(metrics, indent=2), flush=True)
 
 
 if __name__ == "__main__":

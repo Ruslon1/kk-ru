@@ -103,7 +103,7 @@ nllb-download:
 	hf download facebook/nllb-200-3.3B --local-dir $(NLLB_MODEL)
 
 nllb-translate:
-	torchrun --standalone --nproc_per_node=$(GPUS) scripts/translate_nllb.py --input $(MONOLINGUAL) --out-dir $(NLLB_SHARDS) --model $(NLLB_MODEL) --batch-size $(NLLB_BATCH) --bucket-size 2048 --num-beams 4
+	PYTHONWARNINGS=ignore TOKENIZERS_PARALLELISM=false TRANSFORMERS_VERBOSITY=error torchrun --standalone --nproc_per_node=$(GPUS) scripts/translate_nllb.py --input $(MONOLINGUAL) --out-dir $(NLLB_SHARDS) --model $(NLLB_MODEL) --batch-size $(NLLB_BATCH) --bucket-size 2048 --num-beams 4
 
 nllb-validate:
 	python scripts/validate_nllb_shards.py --input $(MONOLINGUAL) --shards $(NLLB_SHARDS) --db data/merged/nllb-validation.sqlite
