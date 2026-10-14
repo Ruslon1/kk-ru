@@ -9,6 +9,7 @@ MONOLINGUAL ?= data/monolingual/kazakh.sentences.txt
 NLLB_MODEL ?= models/nllb-200-3.3B
 NLLB_SHARDS ?= data/synthetic/nllb-rank-shards
 NLLB_BATCH ?= 16
+NLLB_BEAMS ?= 1
 QWEN_OUTPUT ?= checkpoints/qwen3-0.6b-lora
 QWEN_BATCH ?= 4
 QWEN_GRAD_ACCUM ?= 8
@@ -103,7 +104,7 @@ nllb-download:
 	hf download facebook/nllb-200-3.3B --local-dir $(NLLB_MODEL)
 
 nllb-translate:
-	PYTHONWARNINGS=ignore TOKENIZERS_PARALLELISM=false TRANSFORMERS_VERBOSITY=error torchrun --standalone --nproc_per_node=$(GPUS) scripts/translate_nllb.py --input $(MONOLINGUAL) --out-dir $(NLLB_SHARDS) --model $(NLLB_MODEL) --batch-size $(NLLB_BATCH) --bucket-size 2048 --num-beams 4
+	PYTHONWARNINGS=ignore TOKENIZERS_PARALLELISM=false TRANSFORMERS_VERBOSITY=error torchrun --standalone --nproc_per_node=$(GPUS) scripts/translate_nllb.py --input $(MONOLINGUAL) --out-dir $(NLLB_SHARDS) --model $(NLLB_MODEL) --batch-size $(NLLB_BATCH) --bucket-size 2048 --num-beams $(NLLB_BEAMS)
 
 nllb-validate:
 	python scripts/validate_nllb_shards.py --input $(MONOLINGUAL) --shards $(NLLB_SHARDS) --db data/merged/nllb-validation.sqlite
