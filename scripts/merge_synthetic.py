@@ -49,6 +49,7 @@ def main() -> None:
     parser.add_argument("--translations", type=Path, required=True, help="JSONL shard file or directory of rank-*.jsonl files")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--db", type=Path, required=True, help="Final SQLite dedup index")
+    parser.add_argument("--skip-errors", action="store_true", help="Skip failed translation records")
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.db.parent.mkdir(parents=True, exist_ok=True)
@@ -80,6 +81,8 @@ def main() -> None:
                         stats["translation_rows"] += 1
                         if record.get("status") != "ok":
                             stats["translation_errors"] += 1
+                            if args.skip_errors:
+                                continue
                             raise ValueError(f"translation error in {shard}:{line_number}: {record.get('error', 'unknown error')}")
                         index = int(record["index"])
                         if db.execute("INSERT OR IGNORE INTO translation_indexes(idx) VALUES (?)", (index,)).rowcount == 0:
