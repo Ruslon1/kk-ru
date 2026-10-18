@@ -18,8 +18,7 @@ size_categories:
 
 Synthetic Kazakh-to-Russian sentence pairs generated with
 `facebook/nllb-200-3.3B` on 6 NVIDIA RTX 4090 GPUs. The dataset contains
-3,999,605 filtered pairs from 4,000,000 generated records. The project is still
-under development.
+3,999,605 filtered pairs from 4,000,000 generated records.
 
 The published files contain successful, non-empty translations and exclude
 pairs identical to the Kazakh source.
