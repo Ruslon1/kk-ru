@@ -539,21 +539,21 @@
     </mxGraphModel>
   </diagram>
   <diagram name="Discrete Diffusion NMT" id="diffusion-kk-ru">
-    <mxGraphModel dx="1734" dy="1191" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1320" math="0" shadow="0">
+    <mxGraphModel dx="2096" dy="1440" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1320" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="d-panel-source" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;strokeColor=#cbd2d9;strokeWidth=1;fillColor=#f4f6f8;fontFamily=Arial;fontSize=17;fontStyle=1;fontColor=#39434d;align=left;verticalAlign=top;spacingTop=10;spacingLeft=16;" value="SOURCE ENCODER" vertex="1">
-          <mxGeometry height="360" width="1160" x="50" y="120" as="geometry" />
+          <mxGeometry height="400" width="1160" x="50" y="80" as="geometry" />
         </mxCell>
         <mxCell id="d-panel-denoise" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;strokeColor=#bdd9ed;strokeWidth=1;fillColor=#f0f7fc;fontFamily=Arial;fontSize=17;fontStyle=1;fontColor=#31536b;align=left;verticalAlign=top;spacingTop=10;spacingLeft=16;" value="ITERATIVE DENOISING" vertex="1">
-          <mxGeometry height="540" width="1420" x="440" y="490" as="geometry" />
+          <mxGeometry height="540" width="1737.5" x="202.5" y="490" as="geometry" />
         </mxCell>
         <mxCell id="d-panel-training" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;strokeColor=#d3d3d3;strokeWidth=1;fillColor=#f7f7f7;fontFamily=Arial;fontSize=17;fontStyle=1;fontColor=#444444;align=left;verticalAlign=top;spacingTop=10;spacingLeft=16;" value="TRAINING" vertex="1">
-          <mxGeometry height="200" width="1300" x="50" y="1035" as="geometry" />
+          <mxGeometry height="200" width="1300" x="50" y="1090" as="geometry" />
         </mxCell>
         <mxCell id="d-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=32;fontStyle=1;fontColor=#000000;" value="Discrete Diffusion Translator" vertex="1">
-          <mxGeometry height="60" width="880" x="510" y="30" as="geometry" />
+          <mxGeometry height="60" width="880" x="510" y="10" as="geometry" />
         </mxCell>
         <mxCell id="d-total-params" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=52;fontStyle=1;fontColor=#168ce0;" value="~208M" vertex="1">
           <mxGeometry height="68" width="300" x="1510" y="20" as="geometry" />
@@ -580,9 +580,9 @@
           <mxGeometry height="36" width="70" x="650" y="424" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-heads" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=22;fontStyle=1;fontColor=#000000;" value="&lt;font color=&quot;#3399ff&quot;&gt;8&lt;/font&gt; heads" vertex="1">
-          <mxGeometry height="40" width="140" x="1110" y="200" as="geometry" />
+          <mxGeometry height="40" width="140" x="1130" y="200" as="geometry" />
         </mxCell>
-        <mxCell id="d-memory" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Encoder memory&lt;br&gt;Hsrc" vertex="1">
+        <mxCell id="d-memory" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Encoder output&lt;br&gt;Hsrc" vertex="1">
           <mxGeometry height="82" width="190" x="1210" y="329" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-norm1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=16;fontColor=#000000;align=center;verticalAlign=middle;" value="RMSNorm" vertex="1">
@@ -597,7 +597,7 @@
         <mxCell id="d-length" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Length predictor" vertex="1">
           <mxGeometry height="82" width="240" x="1270" y="104" as="geometry" />
         </mxCell>
-        <mxCell id="d-init" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="xT&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] ... [MASK]&lt;/font&gt;" vertex="1">
+        <mxCell id="d-init" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="xT · L masks&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] ... [MASK]&lt;/font&gt;" vertex="1">
           <mxGeometry height="82" width="240" x="1480" y="329" as="geometry" />
         </mxCell>
         <mxCell id="d-target-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#000000;" value="Denoising input" vertex="1">
@@ -660,17 +660,14 @@
         <mxCell id="d-dec-params" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#168ce0;" value="~104M" vertex="1">
           <mxGeometry height="28" width="120" x="1070" y="1000" as="geometry" />
         </mxCell>
-        <mxCell id="d-train-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=21;fontStyle=1;fontColor=#000000;" value="Training" vertex="1">
-          <mxGeometry height="50" width="100" x="80" y="1040" as="geometry" />
-        </mxCell>
         <mxCell id="d-clean" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="x₀&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Я живу в Алматы.&lt;/font&gt;" vertex="1">
-          <mxGeometry height="90" width="320" x="80" y="1120" as="geometry" />
+          <mxGeometry height="90" width="320" x="80" y="1180" as="geometry" />
         </mxCell>
         <mxCell id="d-corrupt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="q(xₜ | x₀)&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] живу [MASK] Алматы [MASK]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="90" width="410" x="480" y="1120" as="geometry" />
+          <mxGeometry height="90" width="410" x="480" y="1180" as="geometry" />
         </mxCell>
         <mxCell id="d-loss" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="Cross-entropy" vertex="1">
-          <mxGeometry height="90" width="300" x="1010" y="1120" as="geometry" />
+          <mxGeometry height="90" width="300" x="1010" y="1180" as="geometry" />
         </mxCell>
         <mxCell id="de1" edge="1" parent="1" source="d-src" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-srcemb">
           <mxGeometry relative="1" as="geometry" />
@@ -681,7 +678,7 @@
         <mxCell id="de3" edge="1" parent="1" source="d-enc-ffn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-memory">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="de4" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-length" value="pool source states">
+        <mxCell id="de4" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-length" value="pool Hsrc">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1305" y="210" />
@@ -689,10 +686,10 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="de5" edge="1" parent="1" source="d-length" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;" target="d-init" value="length L">
+        <mxCell id="de5" edge="1" parent="1" source="d-length" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;" target="d-init" value="target length L">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="de6" edge="1" parent="1" source="d-init" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-noisy" value="initialize xT">
+        <mxCell id="de6" edge="1" parent="1" source="d-init" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-noisy" value="initialize">
           <mxGeometry relative="1" x="-0.0822" as="geometry">
             <Array as="points">
               <mxPoint x="1600" y="490" />
@@ -718,7 +715,7 @@
             <mxPoint x="170" y="840" as="sourcePoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="de9" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="encoder memory">
+        <mxCell id="de9" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="">
           <mxGeometry relative="1" x="-0.3393" as="geometry">
             <Array as="points">
               <mxPoint x="1305" y="813" />
