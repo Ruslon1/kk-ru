@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.5 Chrome/134.0.6998.205 Electron/35.3.0 Safari/537.36">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.5 Chrome/134.0.6998.205 Electron/35.3.0 Safari/537.36" pages="2">
   <diagram name="第 1 页" id="6XtwPirPbY1MhBL8eIev">
     <mxGraphModel dx="45" dy="2197" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -539,63 +539,190 @@
     </mxGraphModel>
   </diagram>
   <diagram name="Discrete Diffusion NMT" id="diffusion-kk-ru">
-    <mxGraphModel dx="1850" dy="1280" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1320" math="0" shadow="0">
+    <mxGraphModel dx="1863" dy="1280" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1320" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="d-title" value="Discrete Diffusion Translator" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=32;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="510" y="30" width="880" height="60" as="geometry" /></mxCell>
-
-        <mxCell id="d-src" value="Kazakh source&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Мен Алматыда тұрамын.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="70" y="210" width="245" height="82" as="geometry" /></mxCell>
-        <mxCell id="d-srcemb" value="Source token&lt;br&gt;embedding" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="400" y="220" width="185" height="82" as="geometry" /></mxCell>
-        <mxCell id="d-enc-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=2;fillColor=#d9d9d9;" vertex="1" parent="1"><mxGeometry x="700" y="150" width="365" height="245" as="geometry" /></mxCell>
-        <mxCell id="d-enc-inner" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=3;fillColor=#56c0fe;opacity=88;" vertex="1" parent="1"><mxGeometry x="735" y="185" width="295" height="175" as="geometry" /></mxCell>
-        <mxCell id="d-enc-title" value="Bidirectional Encoder" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=21;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="750" y="205" width="265" height="40" as="geometry" /></mxCell>
-        <mxCell id="d-enc-attn" value="Full self-attention" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="775" y="265" width="215" height="58" as="geometry" /></mxCell>
-        <mxCell id="d-enc-repeat" value="N ×" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#168ce0;" vertex="1" parent="1"><mxGeometry x="745" y="325" width="60" height="30" as="geometry" /></mxCell>
-        <mxCell id="d-memory" value="Encoder memory&lt;br&gt;Hsrc" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="1160" y="220" width="190" height="82" as="geometry" /></mxCell>
-        <mxCell id="d-length" value="Length head&lt;br&gt;predict target length L" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="1480" y="130" width="240" height="82" as="geometry" /></mxCell>
-        <mxCell id="d-init" value="Initial target xT&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] [MASK] ... [MASK]&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="1480" y="280" width="240" height="82" as="geometry" /></mxCell>
-
-        <mxCell id="d-target-label" value="Target sequence xₜ + timestep t" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="90" y="600" width="340" height="45" as="geometry" /></mxCell>
-        <mxCell id="d-noisy" value="Current noisy target&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] живу [MASK] ...&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="80" y="670" width="330" height="88" as="geometry" /></mxCell>
-        <mxCell id="d-time" value="Timestep embedding&lt;br&gt;t" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="80" y="830" width="210" height="76" as="geometry" /></mxCell>
-
-        <mxCell id="d-dec-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=2;fillColor=#d9d9d9;" vertex="1" parent="1"><mxGeometry x="500" y="520" width="700" height="440" as="geometry" /></mxCell>
-        <mxCell id="d-dec-inner" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=3;fillColor=#56c0fe;opacity=88;" vertex="1" parent="1"><mxGeometry x="555" y="590" width="590" height="330" as="geometry" /></mxCell>
-        <mxCell id="d-dec-title" value="Denoising Decoder Layer" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="610" y="540" width="480" height="42" as="geometry" /></mxCell>
-        <mxCell id="d-dec-out" value="Vocabulary projection&lt;br&gt;predict clean token x₀ at every position" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="1280" y="665" width="250" height="88" as="geometry" /></mxCell>
-        <mxCell id="d-ffn" value="SwiGLU feed-forward" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="735" y="835" width="250" height="56" as="geometry" /></mxCell>
-        <mxCell id="d-selfattn" value="Bidirectional target self-attention&lt;br&gt;(no causal mask)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="665" y="625" width="390" height="78" as="geometry" /></mxCell>
-        <mxCell id="d-crossattn" value="Cross-attention to source memory&lt;br&gt;Q = target; K,V = Hsrc" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="665" y="735" width="390" height="78" as="geometry" /></mxCell>
-        <mxCell id="d-repeat" value="M ×" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#168ce0;" vertex="1" parent="1"><mxGeometry x="515" y="735" width="80" height="48" as="geometry" /></mxCell>
-
-        <mxCell id="d-sampler" value="Reverse sampler&lt;br&gt;confidence → keep or remask&lt;br&gt;form next state xₜ₋₁" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="1600" y="665" width="260" height="108" as="geometry" /></mxCell>
-        <mxCell id="d-final" value="Final Russian text&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Я живу в Алматы.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="1600" y="860" width="260" height="90" as="geometry" /></mxCell>
-        <mxCell id="d-steps" value="Iterate for t = T ... 1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=17;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="1560" y="615" width="340" height="40" as="geometry" /></mxCell>
-
-        <mxCell id="d-train-title" value="Training: corrupt the gold target and predict the original tokens" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=21;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="80" y="1040" width="980" height="50" as="geometry" /></mxCell>
-        <mxCell id="d-clean" value="Gold Russian target x₀&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Я живу в Алматы .&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="80" y="1120" width="320" height="90" as="geometry" /></mxCell>
-        <mxCell id="d-corrupt" value="Sample t; mask tokens&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] живу [MASK] Алматы [MASK]&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="480" y="1120" width="410" height="90" as="geometry" /></mxCell>
-        <mxCell id="d-loss" value="Cross-entropy loss&lt;br&gt;predicted tokens vs. x₀&lt;br&gt;+ length loss" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="970" y="1120" width="300" height="90" as="geometry" /></mxCell>
-        <mxCell id="d-notes" value="[MASK] is a vocabulary token, distinct from PAD. The forward process masks tokens; the reverse process reconstructs the translation." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=16;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="1360" y="1100" width="430" height="115" as="geometry" /></mxCell>
-
-        <mxCell id="de1" edge="1" parent="1" source="d-src" target="d-srcemb" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de2" edge="1" parent="1" source="d-srcemb" target="d-enc-bg" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de3" edge="1" parent="1" source="d-enc-bg" target="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de4" edge="1" parent="1" source="d-memory" target="d-length" value="pool source states" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de5" edge="1" parent="1" source="d-length" target="d-init" value="length L" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de6" edge="1" parent="1" source="d-init" target="d-noisy" value="initialize xT" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1600" y="450" /><mxPoint x="245" y="450" /></Array></mxGeometry></mxCell>
-        <mxCell id="de7" edge="1" parent="1" source="d-noisy" target="d-selfattn" value="noisy target xₜ" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de8" edge="1" parent="1" source="d-time" target="d-selfattn" value="t" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de9" edge="1" parent="1" source="d-memory" target="d-crossattn" value="encoder memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1400" y="430" /><mxPoint x="1240" y="430" /><mxPoint x="1240" y="774" /></Array></mxGeometry></mxCell>
-        <mxCell id="de10" edge="1" parent="1" source="d-selfattn" target="d-crossattn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de11" edge="1" parent="1" source="d-crossattn" target="d-ffn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de12" edge="1" parent="1" source="d-ffn" target="d-dec-out" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de13" edge="1" parent="1" source="d-dec-out" target="d-sampler" value="per-position logits" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de14" edge="1" parent="1" source="d-sampler" target="d-final" value="final step" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de15" edge="1" parent="1" source="d-sampler" target="d-noisy" value="next state xₜ₋₁; repeat" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#168ce0;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;fontStyle=1;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1880" y="720" /><mxPoint x="1880" y="485" /><mxPoint x="245" y="485" /></Array></mxGeometry></mxCell>
-        <mxCell id="de16" edge="1" parent="1" source="d-clean" target="d-corrupt" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="de17" edge="1" parent="1" source="d-corrupt" target="d-loss" value="predict x₀" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="d-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=32;fontStyle=1;fontColor=#000000;" value="Discrete Diffusion Translator" vertex="1">
+          <mxGeometry height="60" width="880" x="510" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d-total-params" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontStyle=1;fontColor=#168ce0;" value="≈208.5M parameters" vertex="1">
+          <mxGeometry height="48" width="350" x="1470" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="d-model-config" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=16;fontColor=#000000;" value="d_model 512 · 8 heads × 64 · SwiGLU hidden 4096 · 12 encoder / 12 decoder blocks" vertex="1">
+          <mxGeometry height="30" width="850" x="360" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="d-src" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Kazakh source&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Мен Алматыда тұрамын.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="82" width="245" x="70" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="d-srcemb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Shared source / target&lt;br&gt;token embedding" vertex="1">
+          <mxGeometry height="82" width="185" x="400" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=2;fillColor=#d9d9d9;" value="" vertex="1">
+          <mxGeometry height="245" width="365" x="700" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-inner" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=3;fillColor=#56c0fe;opacity=88;" value="" vertex="1">
+          <mxGeometry height="175" width="295" x="735" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=21;fontStyle=1;fontColor=#000000;" value="Bidirectional Encoder" vertex="1">
+          <mxGeometry height="40" width="265" x="750" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-attn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Bidirectional GQA&lt;br&gt;8 Q / 8 KV heads" vertex="1">
+          <mxGeometry height="58" width="215" x="775" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-repeat" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#168ce0;" value="12 ×" vertex="1">
+          <mxGeometry height="30" width="60" x="745" y="325" as="geometry" />
+        </mxCell>
+        <mxCell id="d-memory" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Encoder memory&lt;br&gt;Hsrc" vertex="1">
+          <mxGeometry height="82" width="190" x="1160" y="231.5" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-spec" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontColor=#000000;" value="12 encoder blocks · ≈88.1M parameters&lt;br&gt;Pre-RMSNorm → bidirectional GQA (RoPE + QK-Norm)&lt;br&gt;Pre-RMSNorm → SwiGLU (hidden 4096); residual connections" vertex="1">
+          <mxGeometry height="84" width="500" x="660" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="d-length" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Length head&lt;br&gt;predict target length L" vertex="1">
+          <mxGeometry height="82" width="240" x="1300" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="d-init" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Initial target xT&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] [MASK] ... [MASK]&lt;/font&gt;" vertex="1">
+          <mxGeometry height="82" width="240" x="1480" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="d-target-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#000000;" value="Target sequence xₜ + timestep t" vertex="1">
+          <mxGeometry height="45" width="340" x="1610" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="d-noisy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="Current noisy target&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] живу [MASK] ...&lt;/font&gt;" vertex="1">
+          <mxGeometry height="88" width="330" x="1520" y="502" as="geometry" />
+        </mxCell>
+        <mxCell id="d-time" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Timestep embedding&lt;br&gt;t → AdaLN" vertex="1">
+          <mxGeometry height="76" width="210" x="210" y="633" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=2;fillColor=#d9d9d9;" value="" vertex="1">
+          <mxGeometry height="440" width="700" x="500" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-inner" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=3;fillColor=#56c0fe;opacity=88;" value="" vertex="1">
+          <mxGeometry height="330" width="590" x="555" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontStyle=1;fontColor=#000000;" value="Denoising Decoder Block · AdaLN(t)" vertex="1">
+          <mxGeometry height="42" width="480" x="610" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Vocabulary projection&lt;br&gt;predict clean token x₀ at every position" vertex="1">
+          <mxGeometry height="88" width="250" x="1240" y="819" as="geometry" />
+        </mxCell>
+        <mxCell id="d-ffn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="SwiGLU FFN · hidden 4096" vertex="1">
+          <mxGeometry height="56" width="250" x="735" y="835" as="geometry" />
+        </mxCell>
+        <mxCell id="d-selfattn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Bidirectional target GQA (8 Q / 4 KV heads)&lt;br&gt;RoPE + QK-Norm · no causal mask" vertex="1">
+          <mxGeometry height="78" width="390" x="665" y="625" as="geometry" />
+        </mxCell>
+        <mxCell id="d-crossattn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Cross-attention to source memory&lt;br&gt;8 Q heads / 8 KV heads" vertex="1">
+          <mxGeometry height="78" width="390" x="665" y="735" as="geometry" />
+        </mxCell>
+        <mxCell id="d-repeat" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#168ce0;" value="12 ×" vertex="1">
+          <mxGeometry height="48" width="80" x="490" y="735" as="geometry" />
+        </mxCell>
+        <mxCell id="d-sampler" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Reverse sampler&lt;br&gt;confidence → keep or remask&lt;br&gt;form next state xₜ₋₁" vertex="1">
+          <mxGeometry height="108" width="260" x="1600" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="d-final" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Final Russian text&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Я живу в Алматы.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="260" x="1600" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="d-steps" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=17;fontColor=#000000;" value="Iterate for t = T ... 1" vertex="1">
+          <mxGeometry height="40" width="340" x="1560" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-params" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=15;fontColor=#000000;" value="12 decoder blocks · 97.5M + AdaLN · 6.3M parameters" vertex="1">
+          <mxGeometry height="28" width="660" x="520" y="923" as="geometry" />
+        </mxCell>
+        <mxCell id="d-train-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=21;fontStyle=1;fontColor=#000000;" value="Training: corrupt the gold target and predict the original tokens" vertex="1">
+          <mxGeometry height="50" width="980" x="80" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="d-clean" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="Gold Russian target x₀&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Я живу в Алматы .&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="320" x="80" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="d-corrupt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="Sample t; mask tokens&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;[MASK] живу [MASK] Алматы [MASK]&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="410" x="480" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="d-loss" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="Cross-entropy loss&lt;br&gt;predicted tokens vs. x₀&lt;br&gt;+ length loss" vertex="1">
+          <mxGeometry height="90" width="300" x="970" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="d-notes" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=16;fontColor=#000000;" value="Shared token embeddings and output projection. AdaLN uses timestep t to produce scale/shift in each decoder block (shared across its sublayers). [MASK] is distinct from PAD; the forward process masks target tokens." vertex="1">
+          <mxGeometry height="115" width="430" x="1360" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="de1" edge="1" parent="1" source="d-src" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-srcemb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de2" edge="1" parent="1" source="d-srcemb" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-enc-bg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de3" edge="1" parent="1" source="d-enc-bg" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-memory">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de4" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-length" value="pool source states">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de5" edge="1" parent="1" source="d-length" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;" target="d-init" value="length L">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de6" edge="1" parent="1" source="d-init" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-noisy" value="initialize xT">
+          <mxGeometry relative="1" x="-0.0822" as="geometry">
+            <Array as="points">
+              <mxPoint x="1600" y="490" />
+              <mxPoint x="1600" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="de7" edge="1" parent="1" source="d-noisy" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="d-selfattn" value="noisy target xₜ">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1560" y="664" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="de8" edge="1" parent="1" source="d-time" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;exitX=1.011;exitY=0.397;exitDx=0;exitDy=0;exitPerimeter=0;" target="d-selfattn" value="&lt;font style=&quot;font-size: 31px;&quot;&gt;t&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.1209" as="geometry">
+            <Array as="points">
+              <mxPoint x="422.3" y="664" />
+            </Array>
+            <mxPoint x="170" y="840" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="de9" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="d-crossattn" value="encoder memory">
+          <mxGeometry relative="1" x="-0.3512" as="geometry">
+            <Array as="points">
+              <mxPoint x="1255" y="774" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="de10" edge="1" parent="1" source="d-selfattn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-crossattn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de11" edge="1" parent="1" source="d-crossattn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-ffn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de12" edge="1" parent="1" source="d-ffn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;" target="d-dec-out">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de13" edge="1" parent="1" source="d-dec-out" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;" target="d-sampler" value="per-position logits">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1630" y="863" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="de14" edge="1" parent="1" source="d-sampler" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;" target="d-final" value="final step">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de15" edge="1" parent="1" source="d-sampler" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#168ce0;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;fontStyle=1;labelBackgroundColor=#ffffff;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="d-noisy" value="next state xₜ₋₁; repeat">
+          <mxGeometry relative="1" x="0.3571" as="geometry">
+            <Array as="points">
+              <mxPoint x="1960" y="720" />
+              <mxPoint x="1960" y="546" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="de16" edge="1" parent="1" source="d-clean" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-corrupt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="de17" edge="1" parent="1" source="d-corrupt" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;fontSize=15;labelBackgroundColor=#ffffff;" target="d-loss" value="predict x₀">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
