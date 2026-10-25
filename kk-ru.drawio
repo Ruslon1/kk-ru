@@ -539,7 +539,7 @@
     </mxGraphModel>
   </diagram>
   <diagram name="Discrete Diffusion NMT" id="diffusion-kk-ru">
-    <mxGraphModel dx="1863" dy="1280" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1320" math="0" shadow="0">
+    <mxGraphModel dx="1458" dy="1001" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1320" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -550,37 +550,40 @@
           <mxGeometry height="68" width="300" x="1510" y="20" as="geometry" />
         </mxCell>
         <mxCell id="d-src" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Kazakh source&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Мен Алматыда тұрамын.&lt;/font&gt;" vertex="1">
-          <mxGeometry height="82" width="245" x="70" y="210" as="geometry" />
+          <mxGeometry height="82" width="245" x="80" y="165" as="geometry" />
         </mxCell>
         <mxCell id="d-srcemb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Token embedding" vertex="1">
-          <mxGeometry height="82" width="185" x="400" y="220" as="geometry" />
+          <mxGeometry height="82" width="185" x="400" y="165" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=2;fillColor=#d9d9d9;" value="" vertex="1">
-          <mxGeometry height="285" width="365" x="700" y="130" as="geometry" />
+          <mxGeometry height="350" width="490" x="700" y="130" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-inner" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=3;fillColor=#56c0fe;opacity=88;" value="" vertex="1">
-          <mxGeometry height="225" width="295" x="735" y="160" as="geometry" />
+          <mxGeometry height="290" width="420" x="735" y="160" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#000000;" value="Encoder block" vertex="1">
           <mxGeometry height="26" width="175" x="750" y="164" as="geometry" />
         </mxCell>
-        <mxCell id="d-enc-attn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Self-attention · 8 heads" vertex="1">
-          <mxGeometry height="40" width="235" x="765" y="226" as="geometry" />
+        <mxCell id="d-enc-attn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#000000;strokeWidth=2;fillColor=#595959;fontFamily=Arial;fontSize=18;fontColor=#ffffff;align=center;verticalAlign=middle;spacing=4;" value="Multi-Head Attention" vertex="1">
+          <mxGeometry height="48" width="235" x="765" y="244" as="geometry" />
         </mxCell>
-        <mxCell id="d-enc-repeat" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#168ce0;" value="12 ×" vertex="1">
-          <mxGeometry height="30" width="70" x="945" y="172" as="geometry" />
+        <mxCell id="d-enc-repeat" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#168ce0;" value="12 ×" vertex="1">
+          <mxGeometry height="36" width="70" x="700" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-heads" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=22;fontStyle=1;fontColor=#000000;" value="&lt;font color=&quot;#3399ff&quot;&gt;8&lt;/font&gt; heads" vertex="1">
+          <mxGeometry height="40" width="140" x="1040" y="248" as="geometry" />
         </mxCell>
         <mxCell id="d-memory" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Encoder memory&lt;br&gt;Hsrc" vertex="1">
-          <mxGeometry height="82" width="190" x="1160" y="231.5" as="geometry" />
+          <mxGeometry height="82" width="190" x="1210" y="290" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-norm1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=16;fontColor=#000000;align=center;verticalAlign=middle;" value="RMSNorm" vertex="1">
-          <mxGeometry height="26" width="195" x="785" y="193" as="geometry" />
+          <mxGeometry height="26" width="195" x="785" y="205" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-norm2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=16;fontColor=#000000;align=center;verticalAlign=middle;" value="RMSNorm" vertex="1">
-          <mxGeometry height="26" width="195" x="785" y="273" as="geometry" />
+          <mxGeometry height="26" width="195" x="785" y="305" as="geometry" />
         </mxCell>
         <mxCell id="d-enc-ffn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="SwiGLU · 4096" vertex="1">
-          <mxGeometry height="40" width="235" x="765" y="307" as="geometry" />
+          <mxGeometry height="40" width="235" x="765" y="350" as="geometry" />
         </mxCell>
         <mxCell id="d-length" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Length predictor" vertex="1">
           <mxGeometry height="82" width="240" x="1300" y="90" as="geometry" />
@@ -595,37 +598,43 @@
           <mxGeometry height="88" width="330" x="1520" y="502" as="geometry" />
         </mxCell>
         <mxCell id="d-time" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="t → AdaLN" vertex="1">
-          <mxGeometry height="76" width="210" x="210" y="633" as="geometry" />
+          <mxGeometry height="76" width="127.5" x="272.5" y="647" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=2;fillColor=#d9d9d9;" value="" vertex="1">
-          <mxGeometry height="440" width="700" x="500" y="520" as="geometry" />
+          <mxGeometry height="528" width="700" x="500" y="502" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-inner" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#000000;strokeWidth=3;fillColor=#56c0fe;opacity=88;" value="" vertex="1">
-          <mxGeometry height="330" width="590" x="555" y="590" as="geometry" />
+          <mxGeometry height="430" width="590" x="555" y="570" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontStyle=1;fontColor=#000000;" value="Denoising block" vertex="1">
-          <mxGeometry height="42" width="480" x="610" y="540" as="geometry" />
+          <mxGeometry height="26" width="480" x="610" y="511" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Vocabulary projection" vertex="1">
-          <mxGeometry height="88" width="250" x="1240" y="819" as="geometry" />
+          <mxGeometry height="88" width="250" x="1300" y="832" as="geometry" />
         </mxCell>
         <mxCell id="d-ffn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="SwiGLU · 4096" vertex="1">
-          <mxGeometry height="56" width="250" x="735" y="835" as="geometry" />
+          <mxGeometry height="56" width="250" x="735" y="927" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-norm1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=16;fontColor=#000000;align=center;verticalAlign=middle;" value="RMSNorm" vertex="1">
-          <mxGeometry height="30" width="300" x="710" y="596" as="geometry" />
+          <mxGeometry height="30" width="127.5" x="797.5" y="580" as="geometry" />
         </mxCell>
-        <mxCell id="d-selfattn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Self-attention · 8 heads" vertex="1">
-          <mxGeometry height="48" width="360" x="680" y="634" as="geometry" />
+        <mxCell id="d-selfattn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#000000;strokeWidth=2;fillColor=#595959;fontFamily=Arial;fontSize=18;fontColor=#ffffff;align=center;verticalAlign=middle;spacing=4;" value="Multi-Head Attention" vertex="1">
+          <mxGeometry height="48" width="360" x="680" y="647" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-norm2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=16;fontColor=#000000;align=center;verticalAlign=middle;" value="RMSNorm" vertex="1">
-          <mxGeometry height="30" width="300" x="710" y="692" as="geometry" />
+          <mxGeometry height="30" width="127.5" x="797.5" y="730" as="geometry" />
         </mxCell>
-        <mxCell id="d-crossattn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=18;fontColor=#000000;align=center;verticalAlign=middle;" value="Cross-attention · 8 heads" vertex="1">
-          <mxGeometry height="48" width="360" x="680" y="730" as="geometry" />
+        <mxCell id="d-crossattn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#000000;strokeWidth=2;fillColor=#595959;fontFamily=Arial;fontSize=18;fontColor=#ffffff;align=center;verticalAlign=middle;spacing=4;" value="Cross-Attention" vertex="1">
+          <mxGeometry height="48" width="360" x="680" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="d-self-heads" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#000000;" value="&lt;font color=&quot;#3399ff&quot;&gt;8&lt;/font&gt; heads" vertex="1">
+          <mxGeometry height="38" width="90" x="1100" y="652" as="geometry" />
+        </mxCell>
+        <mxCell id="d-cross-heads" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#000000;" value="&lt;font color=&quot;#3399ff&quot;&gt;8&lt;/font&gt; heads" vertex="1">
+          <mxGeometry height="38" width="90" x="1100" y="752" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-norm3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=16;fontColor=#000000;align=center;verticalAlign=middle;" value="RMSNorm" vertex="1">
-          <mxGeometry height="30" width="300" x="710" y="788" as="geometry" />
+          <mxGeometry height="30" width="300" x="710" y="870" as="geometry" />
         </mxCell>
         <mxCell id="d-repeat" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#168ce0;" value="12 ×" vertex="1">
           <mxGeometry height="48" width="80" x="490" y="730" as="geometry" />
@@ -640,10 +649,10 @@
           <mxGeometry height="40" width="340" x="1560" y="620" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-params" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontStyle=1;fontColor=#168ce0;" value="~104M" vertex="1">
-          <mxGeometry height="28" width="120" x="1070" y="923" as="geometry" />
+          <mxGeometry height="28" width="120" x="1070" y="1000" as="geometry" />
         </mxCell>
         <mxCell id="d-train-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=21;fontStyle=1;fontColor=#000000;" value="Training" vertex="1">
-          <mxGeometry height="50" width="980" x="80" y="1040" as="geometry" />
+          <mxGeometry height="50" width="100" x="80" y="1040" as="geometry" />
         </mxCell>
         <mxCell id="d-clean" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="x₀&lt;br&gt;&lt;font style=&quot;font-family: Courier New&quot;&gt;Я живу в Алматы.&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="320" x="80" y="1120" as="geometry" />
@@ -680,22 +689,25 @@
         <mxCell id="de7" edge="1" parent="1" source="d-noisy" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="d-dec-norm1" value="noisy target xₜ">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1560" y="664" />
+              <mxPoint x="1560" y="595" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="de8" edge="1" parent="1" source="d-time" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;exitX=1.011;exitY=0.397;exitDx=0;exitDy=0;exitPerimeter=0;" target="d-selfattn" value="&lt;font style=&quot;font-size: 31px;&quot;&gt;t&lt;/font&gt;">
-          <mxGeometry relative="1" x="-0.1209" as="geometry">
+          <mxGeometry relative="1" x="-0.5984" as="geometry">
             <Array as="points">
-              <mxPoint x="422.3" y="664" />
+              <mxPoint x="402.3" y="670" />
+              <mxPoint x="450" y="670" />
+              <mxPoint x="450" y="671" />
             </Array>
             <mxPoint x="170" y="840" as="sourcePoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="de9" edge="1" parent="1" source="d-memory" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=15;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="d-crossattn" value="encoder memory">
-          <mxGeometry relative="1" x="-0.3512" as="geometry">
+          <mxGeometry relative="1" x="-0.2089" as="geometry">
             <Array as="points">
-              <mxPoint x="1255" y="774" />
+              <mxPoint x="1310" y="372" />
+              <mxPoint x="1310" y="814" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -721,6 +733,15 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="d-dec-flow4" edge="1" parent="1" source="d-dec-norm3" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#000000;endFill=1;" target="d-ffn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-head-leader" edge="1" parent="1" source="d-enc-heads" style="endArrow=none;html=1;rounded=0;strokeWidth=5;strokeColor=#000000;dashed=1;dashPattern=1 1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="d-enc-attn" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d-self-head-leader" edge="1" parent="1" source="d-self-heads" style="endArrow=none;html=1;rounded=0;strokeWidth=5;strokeColor=#000000;dashed=1;dashPattern=1 1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="d-selfattn" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d-cross-head-leader" edge="1" parent="1" source="d-cross-heads" style="endArrow=none;html=1;rounded=0;strokeWidth=5;strokeColor=#000000;dashed=1;dashPattern=1 1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.1;entryDx=0;entryDy=0;" target="d-crossattn" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="de11" edge="1" parent="1" source="d-ffn" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;edgeStyle=orthogonalEdgeStyle;" target="d-dec-out">
