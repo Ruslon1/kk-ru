@@ -669,6 +669,21 @@
         <mxCell id="d-loss" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#000000;strokeWidth=3;fillColor=#ffffff;fontFamily=Arial;fontSize=17;fontColor=#000000;align=center;verticalAlign=middle;" value="Cross-entropy" vertex="1">
           <mxGeometry height="90" width="300" x="1010" y="1180" as="geometry" />
         </mxCell>
+        <mxCell id="d-enc-add-attn" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" value="+" vertex="1">
+          <mxGeometry height="30" width="30" x="867.5" y="263" as="geometry" />
+        </mxCell>
+        <mxCell id="d-enc-add-ffn" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" value="+" vertex="1">
+          <mxGeometry height="30" width="30" x="1035" y="355" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-add-self" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" value="+" vertex="1">
+          <mxGeometry height="30" width="30" x="845" y="697" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-add-cross" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" value="+" vertex="1">
+          <mxGeometry height="30" width="30" x="845" y="839" as="geometry" />
+        </mxCell>
+        <mxCell id="d-dec-add-ffn" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;strokeWidth=2;fillColor=#ffffff;fontFamily=Arial;fontSize=24;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" value="+" vertex="1">
+          <mxGeometry height="30" width="30" x="1020" y="940" as="geometry" />
+        </mxCell>
         <mxCell id="de1" edge="1" parent="1" source="d-src" style="endArrow=block;html=1;rounded=0;strokeWidth=3;strokeColor=#000000;endFill=1;" target="d-srcemb">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
