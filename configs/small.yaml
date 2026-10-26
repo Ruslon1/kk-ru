@@ -21,7 +21,7 @@ tokenizer:
   sp_model: data/tokenizer/kk-ru-sp32k.model
   vocab_size: 32000
 data:
-  train_tsv: data/filtered/train.kk-ru.tsv
+  train_tsv: data/merged/train.kk-ru.tsv
   eval_dev: data/eval/flores_plus/dev.kk-ru.tsv
   eval_test: data/eval/flores_plus/devtest.kk-ru.tsv
   num_workers: 4

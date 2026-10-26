@@ -56,13 +56,10 @@ make diffusion-overfit
 make diffusion-train GPUS=6
 
 # Compare 8/16/32 denoising steps on dev against the trained AR baseline
-make diffusion-benchmark BASELINE_CHECKPOINT=checkpoints/p0/best/model.pt
+make diffusion-benchmark BASELINE_CHECKPOINT=checkpoints/p0-merged-3ep/best/model.pt
 
 # Final held-out evaluation after selecting the step count on dev
-python -m kk_ru.diffusion_eval \
-  --config configs/diffusion.yaml \
-  --checkpoint checkpoints/diffusion/best/model.pt \
-  --split devtest --steps 16
+make diffusion-eval DIFFUSION_CHECKPOINT=checkpoints/diffusion/best/model.pt
 ```
 
 The benchmark writes JSON and CSV reports under `reports/diffusion/`. Do not use
@@ -97,10 +94,9 @@ python scripts/prepare_translation_benchmark.py
 5 000 gold-пар из train и 2 000 монолингвальных предложений. Для строк из
 `monolingual` поле `ru` пустое и используется только для quality filtering.
 
-Подготовка полного серверного цикла NLLB → merge → продолжение P0 описана в
+Подготовка полного серверного цикла NLLB → merge → обучение описана в
 [`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md). Она включает resumable
-shards, проверку полноты, benchmark на 6 GPU и три дополнительные эпохи P0 на
-merged-корпусе.
+shards, проверку полноты и сборку основного merged-корпуса.
 
 Короткий запуск на сервере после распаковки корпуса:
 
@@ -109,14 +105,15 @@ make nllb-download
 make nllb-translate
 make nllb-validate
 make merge-synthetic
-make docker-train-merged GPUS=6 RESUME=checkpoints/p0/step-N
+make docker-train MODEL=p0 GPUS=6
 ```
 
-Замени `step-N` на папку checkpoint P0 на сервере. `docker-train-merged`
-сам проверит наличие `meta.json`, весов и merged TSV, затем загрузит веса и
-optimizer state и начнёт новую трёхэпоховую фазу с начала merged-корпуса.
-Обычный `make docker-train RESUME=...` продолжает старый cursor и scheduler;
-для расширенного корпуса используй именно `docker-train-merged`.
+Все основные конфиги и команды Docker используют
+`data/merged/train.kk-ru.tsv`; Make проверяет его наличие до запуска. Чтобы
+явно выбрать прежний корпус, укажи
+`TRAIN_TSV=data/filtered/train.kk-ru.tsv`. Команда `docker-train-merged`
+сохранена для однократного переноса старого filtered checkpoint с помощью
+`--resume-new-data`.
 
 ## Конфиг и переопределения
 
@@ -180,7 +177,7 @@ The API key is read from the environment and is never written to reports.
 | Конфиг | Параметры | Checkpoints | Reports |
 |---|---:|---|---|
 | `configs/small.yaml` | ~82M | `checkpoints/small` | `reports/small` |
-| `configs/p0.yaml` | ~202M | `checkpoints/p0` | `reports/p0` |
+| `configs/p0.yaml` | ~202M | `checkpoints/p0-merged-main` | `reports/p0-merged-main` |
 | `configs/large.yaml` | ~578M | `checkpoints/large` | `reports/large` |
 
 У всех конфигов одинаковые данные, tokenizer, seed и evaluation-параметры. Размер
@@ -225,7 +222,7 @@ cd kk-ru
 
 ```bash
 tar -czf kk-ru-training-data.tar.gz -C data \
-  filtered/train.kk-ru.tsv \
+  merged/train.kk-ru.tsv \
   tokenizer/kk-ru-sp32k.model \
   eval/flores_plus/dev.kk-ru.tsv \
   eval/flores_plus/devtest.kk-ru.tsv
@@ -240,10 +237,10 @@ tar -xzf kk-ru-training-data.tar.gz -C data
 df -h .
 ```
 
-Убедись, что существуют `data/filtered/train.kk-ru.tsv`,
+Убедись, что существуют `data/merged/train.kk-ru.tsv`,
 `data/tokenizer/kk-ru-sp32k.model` и оба файла в `data/eval/flores_plus/`.
 Нужны свободные гигабайты для token cache: при первом обучении он автоматически
-создаётся рядом с TSV в `data/filtered/train.kk-ru.tsv.tok`.
+создаётся рядом с TSV в `data/merged/train.kk-ru.tsv.tok`.
 
 ### Собрать и проверить контейнер
 
@@ -338,10 +335,10 @@ ssh -L 6006:localhost:6006 USER@SERVER
 Продолжить с сохранённого шага можно так:
 
 ```bash
-make docker-train MODEL=p0 GPUS=6 RESUME=checkpoints/p0/step-2000
+make docker-train MODEL=p0 GPUS=6 RESUME=checkpoints/p0-merged-main/step-N
 ```
 
-Замени `step-2000` на существующий checkpoint. Возобновление использует сохранённые
+Замени `step-N` на существующий checkpoint. Возобновление использует сохранённые
 веса, optimizer, scheduler и позицию в epoch.
 
 ### Оценить результат

@@ -4,8 +4,8 @@
 
 | Параметр | Значение |
 |---|---:|
-| Корпус | `data/filtered/train.kk-ru.tsv` |
-| Пар в корпусе | 6 851 060 |
+| Основной корпус | `data/merged/train.kk-ru.tsv` |
+| Базовый filtered-корпус | `data/filtered/train.kk-ru.tsv` (6 851 060 пар до merge) |
 | Токенизатор | `data/tokenizer/kk-ru-sp32k.model` |
 | Vocabulary | 32 000 |
 | `max_len` | 256 |
@@ -19,6 +19,10 @@
 Конфиги: `configs/small.yaml`, `configs/p0.yaml`, `configs/large.yaml`.
 
 ## Токены
+
+Приведённые ниже оценки рассчитаны для filtered-корпуса. После merge число пар,
+токенов и шагов зависит от итогового merged TSV; пересчитай его перед оценкой
+времени полного обучения.
 
 В token cache: source получает BOS, target получает BOS и EOS; затем обе стороны
 обрезаются до 256 токенов. `target labels = target[:, 1:]`.

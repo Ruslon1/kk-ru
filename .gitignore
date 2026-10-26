@@ -7,6 +7,7 @@ data/eval/
 data/benchmark/
 data/monolingual/
 data/synthetic/
+data/merged/
 data/hf-cache/
 *.tsv
 *.gz
