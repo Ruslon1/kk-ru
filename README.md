@@ -131,37 +131,7 @@ make docker-train MODEL=p0 GPUS=6 OPTS="train.micro_batch_per_gpu=8"
 | Оценить P0 | `make docker-eval MODEL=p0` |
 | Сравнить checkpoints | `make benchmark` |
 | Обучить/оценить diffusion | `make diffusion-train`, `make diffusion-eval` |
-| Проверить OpenRouter-модели и стоимость без перевода | `make benchmark-openrouter` |
 | Запустить тесты | `make test` |
-
-### OpenRouter benchmark
-
-The hosted-model benchmark uses the same FLORES+ `devtest` references for each
-model. It fetches current model prices from OpenRouter, estimates the full run
-with a 25% safety margin, and refuses to start if the estimate exceeds the
-budget. The default candidate list is Qwen3.8 27B, Qwen3.8 2.4T A95B,
-Gemma 4 26B A4B, Gemma 4 31B, and Qwen3.8 Max. Confirm catalog availability and
-pricing with a dry run before spending credits:
-
-```bash
-make benchmark-openrouter
-
-export OPENROUTER_API_KEY="..."
-python scripts/benchmark_openrouter.py \
-  --config configs/p0.yaml --split devtest --budget-usd 8.75
-```
-
-Use `--models` to select candidates, `--limit N` for a small smoke test,
-`--out DIR` for a report directory, and `--all-metrics` to request COMET,
-COMETKiwi, XCOMET-XL, and multilingual BERTScore in addition to lexical
-metrics. Neural metrics are optional; missing packages or model downloads are
-recorded in `metric_errors` instead of being silently omitted. Individual flags
-such as `--comet-model MODEL` override the standard identifiers. Each response
-is flushed to a per-model JSONL file so an interrupted run can resume. The
-report directory contains a manifest, raw records, translations, and a summary
-with BLEU, chrF, chrF++, TER, FLORES spBLEU, optional neural metrics, cost,
-provider, and latency in both JSON and CSV.
-The API key is read from the environment and is never written to reports.
 
 ## Экспериментальная матрица
 
@@ -353,47 +323,3 @@ make benchmark
 
 Каждый запуск пишет `resolved_config.yaml` и `run_manifest.json` в каталог модели.
 Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU и время старта.
-
-### LoRA fine-tuning Qwen3-0.6B
-
-Для отдельного эксперимента с decoder-only Qwen используется LoRA. Базовые веса
-не меняются: adapter сохраняется в checkpoints/qwen3-0.6b-lora, а TensorBoard
-пишет в checkpoints/qwen3-0.6b-lora/runs.
-
-Сначала проверь корпус и собери образ:
-
-    make docker-build
-    make docker-check MODEL=p0 GPUS=6
-
-Перед полным прогоном сделай короткий DDP smoke:
-
-    docker run --rm --gpus all --ipc=host --shm-size=16g \
-      -v "$PWD/data:/workspace/kk-ru/data" \
-      -v "$PWD/checkpoints:/workspace/kk-ru/checkpoints" \
-      -v "$PWD/runs:/workspace/kk-ru/runs" \
-      -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
-      kk-ru:cuda128 accelerate launch --multi_gpu --num_processes 6 \
-      scripts/finetune_qwen.py --limit 1000 --eval-limit 20 --max-steps 5 \
-      --batch-size 1 --grad-accum 1 --eval-steps 5 --save-steps 5 \
-      --output checkpoints/qwen3-0.6b-lora-smoke
-
-Полный запуск:
-
-    tmux new -s qwen-lora
-    mkdir -p runs/qwen3-0.6b-lora
-    make docker-qwen-lora 2>&1 | tee runs/qwen3-0.6b-lora/train.log
-
-Продолжение после checkpoint:
-
-    docker run --rm --gpus all --ipc=host --shm-size=16g \
-      -v "$PWD/data:/workspace/kk-ru/data" \
-      -v "$PWD/checkpoints:/workspace/kk-ru/checkpoints" \
-      -v "$PWD/runs:/workspace/kk-ru/runs" \
-      -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
-      kk-ru:cuda128 accelerate launch --multi_gpu --num_processes 6 \
-      scripts/finetune_qwen.py --resume checkpoints/qwen3-0.6b-lora/checkpoint-1000 \
-      --output checkpoints/qwen3-0.6b-lora
-
-Оценка adapter на FLORES devtest:
-
-    make docker-qwen-eval

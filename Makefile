@@ -8,18 +8,11 @@ NLLB_MODEL ?= models/nllb-200-3.3B
 NLLB_SHARDS ?= data/synthetic/nllb-rank-shards
 NLLB_BATCH ?= 16
 NLLB_BEAMS ?= 1
-QWEN_OUTPUT ?= checkpoints/qwen3-0.6b-lora
-QWEN_BATCH ?= 4
-QWEN_GRAD_ACCUM ?= 8
-QWEN_ARGS ?=
-QWEN_ADAPTER ?= checkpoints/qwen3-0.6b-lora
-QWEN_EVAL_OUT ?= reports/qwen3-0.6b-lora
-QWEN_EVAL_ARGS ?=
 BASELINE_CHECKPOINT ?= checkpoints/p0-merged-3ep/best/model.pt
 TRAIN_TSV ?= data/merged/train.kk-ru.tsv
 DIFFUSION_CHECKPOINT ?= checkpoints/diffusion/best/model.pt
 
-.PHONY: install data filter tokenizer test docker-build docker-shell docker-check docker-overfit docker-train docker-eval benchmark benchmark-openrouter diffusion-train diffusion-overfit diffusion-eval diffusion-benchmark docker-qwen-lora docker-qwen-eval nllb-download nllb-translate nllb-validate merge-synthetic
+.PHONY: install data filter tokenizer test docker-build docker-shell docker-check docker-overfit docker-train docker-eval benchmark diffusion-train diffusion-overfit diffusion-eval diffusion-benchmark nllb-download nllb-translate nllb-validate merge-synthetic
 
 install:
 	pip install -r requirements.txt
@@ -50,15 +43,6 @@ diffusion-eval:
 
 diffusion-benchmark:
 	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" kk-ru:cuda128 python3 scripts/benchmark_diffusion.py --config configs/diffusion.yaml --checkpoint $(DIFFUSION_CHECKPOINT) --baseline-checkpoint $(BASELINE_CHECKPOINT) --split dev
-
-benchmark-openrouter:
-	python scripts/benchmark_openrouter.py --config configs/p0.yaml --split devtest --budget-usd 8.75 --dry-run
-
-docker-qwen-lora:
-	docker run --rm --gpus all --ipc=host --shm-size=16g -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/runs:/workspace/kk-ru/runs" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 accelerate launch --multi_gpu --num_processes $(GPUS) scripts/finetune_qwen.py --output $(QWEN_OUTPUT) --batch-size $(QWEN_BATCH) --grad-accum $(QWEN_GRAD_ACCUM) $(QWEN_ARGS)
-
-docker-qwen-eval:
-	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/reports:/workspace/kk-ru/reports" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$$HOME/.cache/huggingface:/root/.cache/huggingface" kk-ru:cuda128 python3 scripts/evaluate_qwen.py --adapter $(QWEN_ADAPTER) --output $(QWEN_EVAL_OUT) $(QWEN_EVAL_ARGS)
 
 test:
 	PYTHONPATH=src python3 -m unittest discover -s tests -v
