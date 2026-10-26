@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "kk-ru"
 version = "0.1.0"
-description = "KK→RU machine translation: Qwen-style encoder–decoder (~200M), trained from scratch"
+description = "KK→RU machine translation: Transformer encoder–decoder (~200M), trained from scratch"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []

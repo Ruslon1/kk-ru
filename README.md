@@ -1,6 +1,6 @@
 # KK→RU Neural Machine Translation
 
-Основной baseline — encoder–decoder **~202M** с Qwen-блоком (Pre-LN, RMSNorm,
+Основной baseline — encoder–decoder **~202M** с Pre-LN, RMSNorm,
 RoPE, QK-Norm, SwiGLU), обучение с нуля. Отдельно реализована discrete-diffusion
 модель **~223M** для сравнения с autoregressive baseline. Цель — побить [`deepvk/kazRush-kk-ru`](https://huggingface.co/deepvk/kazRush-kk-ru)
 (197M T5, FLORES+ kk→ru BLEU 18.8 / chrF 48.7 / COMET 86.7) при **том же масштабе и тех же данных**.
@@ -135,7 +135,7 @@ make docker-train MODEL=p0 GPUS=6 OPTS="train.micro_batch_per_gpu=8"
 
 ## Экспериментальная матрица
 
-В репозитории есть три конфигурации одной Qwen-подобной encoder-decoder архитектуры:
+В репозитории есть три конфигурации одной encoder-decoder архитектуры:
 
 | Конфиг | Параметры | Checkpoints | Reports |
 |---|---:|---|---|
