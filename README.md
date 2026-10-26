@@ -20,23 +20,20 @@ docs/training-budget.md # токены, batch, VRAM и время обучени
 ## Быстрый старт
 
 ```bash
-# 1. Окружение — на машине с 4090, Python 3.10–3.12 (torch отстаёт на 3.13+)
-make install
+# Контейнер с CUDA и зависимостями
+make docker-build
 
-# 2. Сырые данные (уже в data/raw; при необходимости докачать)
-make data
+# Проверить GPU, токенизатор и подготовленные корпуса
+make docker-check MODEL=p0 GPUS=6
 
-# 3. Фильтр корпуса: дедуп → чистка → langid → LaBSE
-make filter
+# Короткий smoke test
+make docker-overfit
 
-# 4. Оверфит 10k — гейт перед большим прогоном (loss → 0)
-make overfit
+# Обучить P0 на merged-корпусе
+make docker-train MODEL=p0 GPUS=6
 
-# 5. Обучение P0 (Accelerate DDP)
-make train
-
-# 6. Оценка FLORES+ (BLEU / chrF / chrF++ / spBLEU)
-make eval
+# Оценить FLORES+
+make docker-eval MODEL=p0
 ```
 
 ## Discrete diffusion experiment
@@ -110,34 +107,30 @@ make docker-train MODEL=p0 GPUS=6
 
 Все основные конфиги и команды Docker используют
 `data/merged/train.kk-ru.tsv`; Make проверяет его наличие до запуска. Чтобы
-явно выбрать прежний корпус, укажи
-`TRAIN_TSV=data/filtered/train.kk-ru.tsv`. Команда `docker-train-merged`
-сохранена для однократного переноса старого filtered checkpoint с помощью
-`--resume-new-data`.
+явно выбрать прежний корпус, укажи `TRAIN_TSV=data/filtered/train.kk-ru.tsv`.
+Однократный переход со старого filtered checkpoint описан в
+[`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md).
 
 ## Конфиг и переопределения
 
 Один YAML — `configs/p0.yaml`. Для свупов править файл не обязательно:
 
 ```bash
-python -m kk_ru.train --config configs/p0.yaml --opts train.epochs=5 model.d_model=768
-accelerate launch -m kk_ru.train --config configs/p0.yaml --opts train.micro_batch_per_gpu=8
+make docker-train MODEL=p0 GPUS=6 OPTS="train.epochs=5 model.d_model=768"
+make docker-train MODEL=p0 GPUS=6 OPTS="train.micro_batch_per_gpu=8"
 ```
 
 ## Команды
 
 | Что | Команда |
 |---|---|
-| Установить окружение | `make install` |
-| Скачать открытые данные | `make data` |
-| Отфильтровать корпус | `make filter` |
-| Оверфит-тест | `make overfit` |
-| Обучение P0 | `make train` |
-| Оценка | `make eval` |
-| Проверить окружение | `make check-env` |
 | Собрать Docker | `make docker-build` |
+| Проверить окружение | `make docker-check MODEL=p0 GPUS=6` |
+| Smoke test | `make docker-overfit` |
 | Запустить Docker-обучение | `make docker-train GPUS=6` |
+| Оценить P0 | `make docker-eval MODEL=p0` |
 | Сравнить checkpoints | `make benchmark` |
+| Обучить/оценить diffusion | `make diffusion-train`, `make diffusion-eval` |
 | Проверить OpenRouter-модели и стоимость без перевода | `make benchmark-openrouter` |
 | Запустить тесты | `make test` |
 
