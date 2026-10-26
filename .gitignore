@@ -4,6 +4,9 @@ data/raw/
 data/filtered/
 data/tokenizer/
 data/eval/
+data/benchmark/
+data/monolingual/
+data/synthetic/
 data/hf-cache/
 *.tsv
 *.gz
@@ -12,6 +15,7 @@ data/hf-cache/
 *.part
 *.model
 *.vocab
+hf-nllb-kk-ru/dataset_info.json
 
 # Environments and caches
 .venv/
