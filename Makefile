@@ -17,8 +17,9 @@ QWEN_ARGS ?=
 QWEN_ADAPTER ?= checkpoints/qwen3-0.6b-lora
 QWEN_EVAL_OUT ?= reports/qwen3-0.6b-lora
 QWEN_EVAL_ARGS ?=
+BASELINE_CHECKPOINT ?= checkpoints/p0/best/model.pt
 
-.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter qwen-lora qwen-eval docker-qwen-lora docker-qwen-eval test docker-build docker-shell docker-check docker-overfit docker-train docker-train-merged docker-eval nllb-download nllb-translate nllb-validate merge-synthetic
+.PHONY: install data filter tokenizer check-env overfit train eval train-small train-p0 train-large eval-small eval-p0 eval-large benchmark benchmark-openrouter diffusion-train diffusion-overfit diffusion-eval diffusion-benchmark qwen-lora qwen-eval docker-qwen-lora docker-qwen-eval test docker-build docker-shell docker-check docker-overfit docker-train docker-train-merged docker-eval nllb-download nllb-translate nllb-validate merge-synthetic
 
 install:
 	pip install -r requirements.txt
@@ -65,6 +66,18 @@ eval-large:
 
 benchmark:
 	python scripts/benchmark.py --spbleu
+
+diffusion-train:
+	accelerate launch --multi_gpu --num_processes $(GPUS) -m kk_ru.diffusion_train --config configs/diffusion.yaml
+
+diffusion-overfit:
+	accelerate launch --num_processes 1 -m kk_ru.diffusion_train --config configs/diffusion.yaml --overfit --opts train.max_steps=200 train.epochs=1 train.micro_batch_per_gpu=4 train.grad_accum=1 train.save_every=100 train.eval_every=0 paths.checkpoints=checkpoints/diffusion-smoke paths.reports=reports/diffusion-smoke paths.logs=runs/diffusion-smoke
+
+diffusion-eval:
+	python -m kk_ru.diffusion_eval --config configs/diffusion.yaml --checkpoint checkpoints/diffusion/best/model.pt --split devtest
+
+diffusion-benchmark:
+	python scripts/benchmark_diffusion.py --config configs/diffusion.yaml --checkpoint checkpoints/diffusion/best/model.pt --baseline-checkpoint $(BASELINE_CHECKPOINT) --split dev
 
 benchmark-openrouter:
 	python scripts/benchmark_openrouter.py --config configs/p0.yaml --split devtest --budget-usd 8.75 --dry-run

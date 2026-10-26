@@ -1,7 +1,8 @@
 # KK→RU Neural Machine Translation
 
-Encoder–decoder **~200M** с Qwen-блоком (Pre-LN, RMSNorm, RoPE, QK-Norm, SwiGLU),
-обучение с нуля. Цель — побить [`deepvk/kazRush-kk-ru`](https://huggingface.co/deepvk/kazRush-kk-ru)
+Основной baseline — encoder–decoder **~202M** с Qwen-блоком (Pre-LN, RMSNorm,
+RoPE, QK-Norm, SwiGLU), обучение с нуля. Отдельно реализована discrete-diffusion
+модель **~223M** для сравнения с autoregressive baseline. Цель — побить [`deepvk/kazRush-kk-ru`](https://huggingface.co/deepvk/kazRush-kk-ru)
 (197M T5, FLORES+ kk→ru BLEU 18.8 / chrF 48.7 / COMET 86.7) при **том же масштабе и тех же данных**.
 
 ## Структура
@@ -37,6 +38,35 @@ make train
 # 6. Оценка FLORES+ (BLEU / chrF / chrF++ / spBLEU)
 make eval
 ```
+
+## Discrete diffusion experiment
+
+The diffusion model shares the corpus and SentencePiece vocabulary with the
+baseline. It predicts target length from pooled encoder states, then iteratively
+reveals masked target tokens with a bidirectional Transformer decoder and
+timestep-conditioned AdaRMSNorm. The mask token is an extra input embedding and
+is excluded from the output vocabulary. The default sampler uses 16 denoising
+steps.
+
+```bash
+# Validate the training path on a 10k-example subset
+make diffusion-overfit
+
+# Full run on the same parallel corpus
+make diffusion-train GPUS=6
+
+# Compare 8/16/32 denoising steps on dev against the trained AR baseline
+make diffusion-benchmark BASELINE_CHECKPOINT=checkpoints/p0/best/model.pt
+
+# Final held-out evaluation after selecting the step count on dev
+python -m kk_ru.diffusion_eval \
+  --config configs/diffusion.yaml \
+  --checkpoint checkpoints/diffusion/best/model.pt \
+  --split devtest --steps 16
+```
+
+The benchmark writes JSON and CSV reports under `reports/diffusion/`. Do not use
+devtest to choose the denoising-step count.
 
 ## Дополнительный казахский монолингвальный текст
 

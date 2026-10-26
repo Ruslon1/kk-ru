@@ -81,6 +81,12 @@ class PathsConfig:
 
 
 @dataclass
+class DiffusionConfig:
+    steps: int = 16
+    length_loss_weight: float = 0.1
+
+
+@dataclass
 class Config:
     model: ModelConfig
     tokenizer: TokenizerConfig
@@ -88,6 +94,7 @@ class Config:
     train: TrainConfig
     gen: GenConfig
     paths: PathsConfig
+    diffusion: DiffusionConfig | None = None
 
 
 _SECTIONS = {
@@ -97,7 +104,10 @@ _SECTIONS = {
     "train": TrainConfig,
     "gen": GenConfig,
     "paths": PathsConfig,
+    "diffusion": DiffusionConfig,
 }
+
+_REQUIRED_SECTIONS = tuple(name for name in _SECTIONS if name != "diffusion")
 
 
 def _coerce(current: Any, value: str) -> Any:
@@ -152,7 +162,7 @@ def load_config(path: str | Path, overrides: list[str] | None = None) -> Config:
     for section in raw:
         if section not in _SECTIONS:
             raise ValueError(f"unknown section {section!r} in {path}")
-    for section in _SECTIONS:
+    for section in _REQUIRED_SECTIONS:
         if section not in raw:
             raise ValueError(f"missing section {section!r} in {path}")
 
@@ -160,6 +170,7 @@ def load_config(path: str | Path, overrides: list[str] | None = None) -> Config:
         **{
             name: _build_section(section_type, name, raw[name], path)
             for name, section_type in _SECTIONS.items()
+            if name in raw
         }
     )
     if overrides:
@@ -202,3 +213,8 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("data.num_workers must be non-negative and prefetch_factor positive")
     if gen.beam <= 0:
         raise ValueError("gen.beam must be positive")
+    if cfg.diffusion is not None:
+        if cfg.diffusion.steps <= 0:
+            raise ValueError("diffusion.steps must be positive")
+        if cfg.diffusion.length_loss_weight < 0:
+            raise ValueError("diffusion.length_loss_weight must be non-negative")
