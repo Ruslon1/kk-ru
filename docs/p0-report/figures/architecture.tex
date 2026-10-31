@@ -77,7 +77,6 @@
 \node[attention,minimum width=2.2cm,minimum height=1.13cm] (decoder-cross) at (2187.5,793.5) {Cross attention};
 \node[sum,minimum width=0.3cm,minimum height=0.3cm] (decoder-add2) at (2188,690) {$+$};
 \node[box,minimum width=1.6cm,minimum height=0.42cm] (decoder-norm3) at (2188,606) {RMSNorm 3};
-\node[font=\sffamily\fontsize{18}{20}\selectfont,inner sep=0pt,minimum width=2.95cm,minimum height=0.3cm] (parameters) at (1527.5,95) {$\sim$202M};
 % Encoder and decoder computation, from bottom to top.
 \draw[flow] (887.5,1657.5)--(encoder-tokens.south);
 \draw[wire] (encoder-tokens.north)--(encoder-embed.south);
