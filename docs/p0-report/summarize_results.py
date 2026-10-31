@@ -74,27 +74,29 @@ def main():
         "google/gemma-4-26b-a4b-it": ("Gemma-4-26B-A4B-IT", "26B"),
         "google/gemma-4-31b-it": ("Gemma-4-31B-IT", "31B"),
     }
+    published = {r["model"]: r for r in read("published_benchmarks.json")["results"]}
+    local = [p0, *archives]
+    local_names = {r["model"] for r in local}
+    combined = local + [r for name, r in published.items() if name not in local_names]
     table = [r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrr@{}}",
              r"\toprule Model & Size & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$ & COMET $\uparrow$\\",
-             r"\midrule",
-             r"\multicolumn{7}{@{}l}{\emph{Published in the KazRush model card~\cite{kazrush}}}\\[2pt]"]
-    for row in read("published_benchmarks.json")["results"]:
-        table.append(f"{tex(row['model'])} & {row['size']} & {row['bleu']:.1f} & "
-                     f"{row['chrf']:.1f} & --- & --- & {row['comet']:.1f}" + r" \\")
-    table += [r"\midrule",
-              r"\multicolumn{7}{@{}l}{\emph{Common rescoring of locally available outputs}}\\[2pt]"]
-    for row in [p0, kaz, *[r for r in archives if r is not kaz]]:
-        name, size = names.get(row["model"], (row["model"], "---"))
+             r"\midrule"]
+    for row in sorted(combined, key=lambda r: r["bleu"], reverse=True):
+        source = published.get(row["model"], {})
+        name, size = names.get(row["model"], (row["model"], source.get("size", "---")))
+        name = tex(name)
+        if row["model"] not in local_names:
+            name += r"$^\dagger$"
         if row is p0:
             name, size = r"\textbf{P0 (ours)}", "202M"
-        else:
-            name = tex(name)
-        if row is kaz:
-            size = "197M"
-        values = [f"{row[key]:.2f}" for key in ("bleu", "chrf", "chrf++", "ter")]
+        values = [f"{row[key]:.2f}" if key in row else "---"
+                  for key in ("bleu", "chrf", "chrf++", "ter")]
         if row is p0:
             values = [r"\textbf{" + v + "}" for v in values]
-        table.append(" & ".join([name, size, *values, "---"]) + r" \\")
+        comet = f"{source['comet']:.1f}" if "comet" in source else "---"
+        if row["model"] in local_names and "comet" in source:
+            comet += r"$^\dagger$"
+        table.append(" & ".join([name, size, *values, comet]) + r" \\")
     table += [r"\bottomrule", r"\end{tabular*}"]
     (generated / "comparison.tex").write_text("\n".join(table) + "\n")
 

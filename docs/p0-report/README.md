@@ -31,8 +31,9 @@ Tectonic compilation, from the repository root:
 Regenerate numerical tables instead of hand-editing generated/ files.
 The comparison table combines archived_benchmarks.json and p0-devtest.json
 with published_benchmarks.json, transcribed from the saved KazRush model
-card. Published scores and common rescoring are shown in separate panels;
-unmeasured metrics are left blank. Failed/incomplete runs are excluded.
+card. All models share one table ordered by BLEU, with one row per model.
+A dagger marks published rows or individual values (KazRush COMET);
+unmeasured metrics are shown as dashes. Failed/incomplete runs are excluded.
 
 ## Verified results
 
