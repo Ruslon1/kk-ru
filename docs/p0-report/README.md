@@ -12,8 +12,8 @@ Detailed inventories and provenance stay in this folder.
 - Main source: main.tex
 - Exported PDF snapshot: main.pdf (rebuild after source edits)
 - Bibliography: references.bib
-- Vector architecture: figures/architecture.tex
-- Editable architecture: figures/p0-architecture.drawio
+- Architecture figure: figures/p0-architecture.png (direct export, 6234 x 3366 pixels)
+- Original editable architecture: ../../kk-ru.drawio, first page (P0)
 - Raw evidence and provenance snapshots: evidence/
 - Generated tables: generated/
 
@@ -23,7 +23,8 @@ source, with its author credits preserved. The conference notice is replaced
 by a technical-report notice. TeX Gyre Termes, Heros and Cursor provide the
 Times/Helvetica/Courier typography through the TeX distribution. Bundled
 Noto Serif supplies Cyrillic text under the SIL Open Font License. The
-architecture palette follows the reference figure, with colors by operation.
+architecture is exported directly from the original draw.io source, preserving
+its layout, colors and labels without the editor grid.
 Tectonic compilation, from the repository root:
 
     tectonic docs/p0-report/main.tex
@@ -69,7 +70,6 @@ Run from the repository root:
     PYTHONPATH=src .venv/bin/python docs/p0-report/collect_evidence.py p0 --split dev
     PYTHONPATH=src .venv/bin/python docs/p0-report/collect_evidence.py p0 --split devtest
     PYTHONPATH=src .venv/bin/python docs/p0-report/summarize_results.py
-    .venv/bin/python docs/p0-report/figures/make_drawio.py
     tectonic docs/p0-report/main.tex
 
 P0 generation writes/resumes indexed JSONL in reports/p0-report/. Move a run
