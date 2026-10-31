@@ -3,11 +3,13 @@
 English working draft for a first supervisor discussion. P0 only; diffusion
 results are excluded.
 Author: Ruslan Rakhimov, Kazakhstan-British Technical University (KBTU).
+The concise report retains the model, data/training history and primary
+KazRush comparison. Detailed inventories and provenance stay in this folder.
 
 ## Read and edit
 
 - Main source: main.tex
-- Compiled report: main.pdf
+- Exported PDF snapshot: main.pdf (rebuild after source edits)
 - Bibliography: references.bib
 - Vector architecture: figures/architecture.tex
 - Editable architecture: figures/p0-architecture.drawio
@@ -39,8 +41,8 @@ is unavailable. The paper discloses this limitation.
 All four checkpoint metadata scores exactly match the fresh dev run.
 
 All 29 repository tests pass under pytest. Unittest misses five function-based
-tests. The report inventories both software checks and benchmark archives,
-keeping them distinct.
+tests. Full software checks and benchmark archives are recorded in evidence/
+and generated/, rather than printed as report appendices.
 
 The base file has 6,851,060 pairs; six synthetic shards have 3,999,605.
 Full scans found no exact source/pair intersections with dev or devtest
