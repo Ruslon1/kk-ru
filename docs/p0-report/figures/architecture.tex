@@ -1,54 +1,140 @@
-\definecolor{attentionfill}{RGB}{255,226,187}
-\definecolor{ffnfill}{RGB}{194,232,247}
-\definecolor{embeddingfill}{RGB}{252,224,225}
-\definecolor{normfill}{RGB}{242,244,193}
-\definecolor{projectionfill}{RGB}{219,223,239}
-\definecolor{outputfill}{RGB}{204,231,207}
-\definecolor{blockfill}{RGB}{243,243,244}
-\begin{tikzpicture}[
- font=\sffamily\small, flow/.style={-{Latex[length=2mm]},thick,draw=black},
- box/.style={draw=black,thick,rounded corners=1.5mm,fill=white,
- minimum width=5cm,minimum height=0.72cm,align=center},
- embedding/.style={box,fill=embeddingfill},
- attention/.style={box,fill=attentionfill},
- ffn/.style={box,fill=ffnfill},
- note/.style={font=\sffamily\scriptsize,text=black,align=center}]
-\node[box] (src) at (0,0) {Kazakh source tokens $x$};
-\node[box] (tgt) at (7.1,0) {Shifted Russian target tokens $y_{<t}$};
-\node[embedding] (se) at (0,1.05) {Token embedding $E$};
-\node[embedding] (te) at (7.1,1.05) {Token embedding $E$ (shared)};
-\node[attention,minimum height=1.12cm] (ea) at (0,2.65)
- {Pre-RMSNorm $\rightarrow$ self-attention\\
- 8 query / 8 KV heads; bidirectional\\Q/K RMSNorm + RoPE; residual add};
-\node[ffn,minimum height=0.9cm] (ef) at (0,4.2)
- {Pre-RMSNorm $\rightarrow$ SwiGLU\\$512 \rightarrow 4096 \rightarrow 512$; residual add};
-\node[attention,minimum height=1.12cm] (da) at (7.1,2.65)
- {Pre-RMSNorm $\rightarrow$ causal self-attention\\
- 8 query / 4 KV heads (GQA)\\Q/K RMSNorm + RoPE; residual add};
-\node[attention,minimum height=0.95cm] (dc) at (7.1,4.2)
- {Pre-RMSNorm $\rightarrow$ cross-attention\\8 query / 8 KV heads; residual add};
-\node[ffn,minimum height=0.9cm] (df) at (7.1,5.6)
- {Pre-RMSNorm $\rightarrow$ SwiGLU\\$512 \rightarrow 4096 \rightarrow 512$; residual add};
-\begin{scope}[on background layer]
- \node[draw=black,thick,rounded corners=3mm,fill=blockfill,
- fit=(ea)(ef),inner xsep=3mm,inner ysep=4mm] (eblock) {};
- \node[draw=black,thick,rounded corners=3mm,fill=blockfill,
- fit=(da)(dc)(df),inner xsep=3mm,inner ysep=4mm] (dblock) {};
-\end{scope}
-\node[note,anchor=south west] at (eblock.north west) {ENCODER BLOCK $\times\,12$};
-\node[note,anchor=south west] at (dblock.north west) {DECODER BLOCK $\times\,12$};
-\node[box] (mem) at (0,6.4) {Encoder memory $H_x$};
-\node[box,fill=normfill] (norm) at (7.1,7.5) {Final decoder RMSNorm};
-\node[box,fill=projectionfill] (logits) at (7.1,8.6) {Tied projection $h_t E^\top$; 32\,000 logits};
-\node[box,fill=outputfill] (out) at (7.1,9.7) {Next Russian token; repeat until EOS};
-\draw[flow] (src)--(se);\draw[flow] (se)--(ea);\draw[flow] (ea)--(ef);\draw[flow] (ef)--(mem);
-\draw[flow] (tgt)--(te);\draw[flow] (te)--(da);\draw[flow] (da)--(dc);
-\draw[flow] (dc)--(df);\draw[flow] (df)--(norm);\draw[flow] (norm)--(logits);
-\draw[flow] (logits)--(out);
-\draw[flow]
- (mem.east)--(3.55,6.4)--(3.55,4.2)--node[above,note]{K, V}(dc.west);
-\node[note,text width=4.8cm] at (0,8)
- {$d_{\mathrm{model}}=512$, head size $64$\\Shared source/target vocabulary\\
- 202\,016\,256 trainable parameters\\[2mm]Training: teacher forcing\\
- Inference: beam search with self-attention KV-cache};
+% Native TikZ reconstruction of the first page of kk-ru.drawio.
+% Coordinates, colors and short labels follow the original schematic.
+\definecolor{stackgray}{HTML}{D9D9D9}
+\definecolor{stackblue}{HTML}{6AC8FE}
+\definecolor{attentiongray}{HTML}{595959}
+\definecolor{dimensionblue}{HTML}{1E96ED}
+\definecolor{headred}{HTML}{F57881}
+\begin{tikzpicture}[x=0.01cm,y=-0.01cm,
+ font=\sffamily\fontsize{5.2}{6}\selectfont,
+ box/.style={draw=black,line width=0.7pt,rounded corners=1.2pt,
+ fill=white,align=center,inner sep=0pt,outer sep=0pt},
+ panel/.style={box,fill=stackgray,line width=0.45pt,rounded corners=12pt},
+ block/.style={panel,fill=stackblue,line width=0.7pt,rounded corners=9pt},
+ attention/.style={box,fill=attentiongray,text=white,rounded corners=3pt},
+ sum/.style={box,circle,line width=0.5pt,font=\fontsize{8}{8}\selectfont},
+ note/.style={align=left,inner sep=0pt,outer sep=0pt,
+ font=\sffamily\bfseries\fontsize{7.3}{8.5}\selectfont},
+ flow/.style={-{Latex[length=1.3mm,width=0.9mm]},line width=0.6pt},
+ wire/.style={line width=0.6pt},
+ callout/.style={densely dotted,line width=0.9pt}]
+% Stack containers and feed-forward detail panels.
+\node[panel,minimum width=5.9cm,minimum height=12.25cm] (decoder) at (2187.5,872.5) {};
+\node[block,minimum width=4.3cm,minimum height=9.55cm] (decoder-block) at (2187.5,917.5) {};
+\node[panel,minimum width=4.3cm,minimum height=3.75cm] (decoder-detail) at (2887.5,584.5) {};
+\node[panel,minimum width=5.9cm,minimum height=11.95cm] (encoder) at (887.5,950) {};
+\node[block,minimum width=4.3cm,minimum height=9.1cm] (encoder-block) at (887.5,1002.5) {};
+\node[panel,minimum width=4.3cm,minimum height=3.75cm] (encoder-detail) at (235,652) {};
+% Short operation labels and residual additions.
+\node[box,minimum width=1.7cm,minimum height=0.48cm] (decoder-out) at (2187.5,314) {Linear output layer};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (decoder-final) at (2188,399) {Final RMSNorm};
+\node[box,minimum width=1.6cm,minimum height=0.42cm,fill=stackgray] (decoder-ffn) at (2187.5,531.5) {Feed forward};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (decoder-norm2) at (2187.5,897.5) {RMSNorm 2};
+\node[attention,minimum width=2.2cm,minimum height=1.65cm] (decoder-attn) at (2187.5,1121.5) {Masked grouped-query\\attention};
+\node[box,minimum width=2.7cm,minimum height=0.56cm] (decoder-embed) at (2187.5,1443) {Token embedding layer};
+\node[box,minimum width=1.5cm,minimum height=0.48cm] (decoder-tokens) at (2187.5,1529) {Tokenized text};
+\node[box,minimum width=1.5cm,minimum height=0.55cm] (decoder-rope) at (1950,1104) {RoPE};
+\node[rotate=30,font=\fontsize{26}{28}\selectfont,inner sep=0pt,minimum width=0.7cm,minimum height=1.2cm] (decoder-brace) at (1967.5,1212.5) {$\{$};
+\node[note,text width=0.8cm] (decoder-repeat) at (1932.5,1251) {\textcolor{dimensionblue}{$12\times$}};
+\node[align=center,font=\ttfamily\bfseries\fontsize{6}{7}\selectfont,inner sep=0pt,minimum width=2.35cm,minimum height=0.45cm] (target) at (2187.5,1622.5) {Russian text};
+\node[note,text width=3.3cm] (vocabulary) at (2525,230) {Vocabulary size of \textcolor{dimensionblue}{32k}};
+\node[note,text width=1.95cm] (decoder-context) at (1767.5,1280) {Supported\\context length\\of \textcolor{dimensionblue}{256} tokens};
+\node[note,text width=2.95cm] (decoder-dim) at (2707.5,1520) {Embedding\\dimension of \textcolor{dimensionblue}{512}};
+\node[box,minimum width=1.6cm,minimum height=0.55cm] (decoder-up) at (2797.5,479.5) {Linear layer};
+\node[box,minimum width=1.7cm,minimum height=0.55cm] (decoder-silu) at (2802.5,599.5) {SiLU activation};
+\node[box,minimum width=1.7cm,minimum height=0.55cm] (decoder-gate) at (2987.5,599.5) {Linear layer};
+\node[box,minimum width=1.7cm,minimum height=0.55cm] (decoder-down) at (2802.5,714.5) {Linear layer};
+\node[note,text width=2.75cm] (decoder-hidden) at (2917.5,897.5) {Hidden layer\\dimension of \textcolor{dimensionblue}{4096}};
+\node[sum,minimum width=0.3cm,minimum height=0.3cm] (decoder-add3) at (2188,467) {$+$};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (decoder-norm1) at (2187.5,1306) {RMSNorm 1};
+\node[sum,minimum width=0.3cm,minimum height=0.3cm] (decoder-add1) at (2187.5,990) {$+$};
+\node[sum,minimum width=0.29cm,minimum height=0.29cm] (decoder-mul) at (2897,538) {$\times$};
+\node[note,text width=1.425cm] (decoder-heads) at (2661.25,1096.5) {\textcolor{headred}{8} heads};
+\node[box,minimum width=1.5cm,minimum height=0.55cm] (decoder-qknorm) at (1945,977.5) {Q/K RMSNorm};
+\node[box,minimum width=1.7cm,minimum height=0.48cm] (encoder-out) at (887.5,421.5) {Encoder out};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (encoder-final) at (887.5,498.5) {Final RMSNorm};
+\node[box,minimum width=1.6cm,minimum height=0.42cm,fill=stackgray] (encoder-ffn) at (887.5,753.5) {Feed forward};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (encoder-norm2) at (887.5,933.5) {RMSNorm 2};
+\node[attention,minimum width=2.2cm,minimum height=1.65cm] (encoder-attn) at (887.5,1184) {Bidirectional multi-head\\attention};
+\node[box,minimum width=2.7cm,minimum height=0.56cm] (encoder-embed) at (887.5,1505.5) {Token embedding layer};
+\node[box,minimum width=1.5cm,minimum height=0.48cm] (encoder-tokens) at (887.5,1591.5) {Tokenized text};
+\node[box,minimum width=1.5cm,minimum height=0.55cm] (encoder-rope) at (650,1166.5) {RoPE};
+\node[rotate=30,font=\fontsize{26}{28}\selectfont,inner sep=0pt,minimum width=0.7cm,minimum height=1.2cm] (encoder-brace) at (667.5,1275) {$\{$};
+\node[note,text width=0.8cm] (encoder-repeat) at (632.5,1313.5) {\textcolor{dimensionblue}{$12\times$}};
+\node[align=center,font=\ttfamily\bfseries\fontsize{6}{7}\selectfont,inner sep=0pt,minimum width=2.35cm,minimum height=0.45cm] (source) at (887.5,1685) {Kazakh input text};
+\node[note,text width=1.95cm] (encoder-context) at (467.5,1342.5) {Supported\\context length\\of \textcolor{dimensionblue}{256} tokens};
+\node[note,text width=2.95cm] (encoder-dim) at (1407.5,1582.5) {Embedding\\dimension of \textcolor{dimensionblue}{512}};
+\node[box,minimum width=1.6cm,minimum height=0.55cm] (encoder-up) at (145,547) {Linear layer};
+\node[box,minimum width=1.7cm,minimum height=0.55cm] (encoder-silu) at (150,667) {SiLU activation};
+\node[box,minimum width=1.7cm,minimum height=0.55cm] (encoder-gate) at (335,667) {Linear layer};
+\node[box,minimum width=1.7cm,minimum height=0.55cm] (encoder-down) at (150,782) {Linear layer};
+\node[note,text width=2.75cm] (encoder-hidden) at (265,965) {Hidden layer\\dimension of \textcolor{dimensionblue}{4096}};
+\node[sum,minimum width=0.3cm,minimum height=0.3cm] (encoder-add2) at (887.5,623.5) {$+$};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (encoder-norm1) at (887.5,1368.5) {RMSNorm 1};
+\node[sum,minimum width=0.3cm,minimum height=0.3cm] (encoder-add1) at (887.5,1052.5) {$+$};
+\node[sum,minimum width=0.29cm,minimum height=0.29cm] (encoder-mul) at (244.5,605.5) {$\times$};
+\node[note,text width=1.425cm] (encoder-heads) at (1361.25,1159) {\textcolor{headred}{8} heads};
+\node[box,minimum width=1.5cm,minimum height=0.55cm] (encoder-qknorm) at (645,1040) {Q/K RMSNorm};
+\node[attention,minimum width=2.2cm,minimum height=1.13cm] (decoder-cross) at (2187.5,793.5) {Cross attention};
+\node[sum,minimum width=0.3cm,minimum height=0.3cm] (decoder-add2) at (2188,690) {$+$};
+\node[box,minimum width=1.6cm,minimum height=0.42cm] (decoder-norm3) at (2188,606) {RMSNorm 3};
+\node[font=\sffamily\fontsize{18}{20}\selectfont,inner sep=0pt,minimum width=2.95cm,minimum height=0.3cm] (parameters) at (1527.5,95) {$\sim$202M};
+% Encoder and decoder computation, from bottom to top.
+\draw[flow] (887.5,1657.5)--(encoder-tokens.south);
+\draw[wire] (encoder-tokens.north)--(encoder-embed.south);
+\draw[wire] (encoder-embed.north)--(encoder-norm1.south);
+\draw[flow] (encoder-norm1.north)--(encoder-attn.south);
+\draw[flow] (encoder-attn.north)--(encoder-add1.south);
+\draw[flow] (encoder-add1.north)--(encoder-norm2.south);
+\draw[flow] (encoder-norm2.north)--(encoder-ffn.south);
+\draw[flow] (encoder-ffn.north)--(encoder-add2.south);
+\draw[flow] (encoder-add2.north)--(encoder-final.south);
+\draw[flow] (encoder-final.north)--(encoder-out.south);
+\draw[flow] (887.5,1417.5)--(1033,1417.5)--(1033,1052.5)--(encoder-add1.east);
+\draw[flow] (887.5,1012.5)--(1030,1012.5)--(1030,623.5)--(encoder-add2.east);
+\draw[flow] (2187.5,1595)--(decoder-tokens.south);
+\draw[wire] (decoder-tokens.north)--(decoder-embed.south);
+\draw[wire] (decoder-embed.north)--(decoder-norm1.south);
+\draw[flow] (decoder-norm1.north)--(decoder-attn.south);
+\draw[flow] (decoder-attn.north)--(decoder-add1.south);
+\draw[flow] (decoder-add1.north)--(decoder-norm2.south);
+\draw[flow] (decoder-norm2.north)--(decoder-cross.south);
+\draw[flow] (decoder-cross.north)--(decoder-add2.south);
+\draw[flow] (decoder-add2.north)--(decoder-norm3.south);
+\draw[flow] (decoder-norm3.north)--(decoder-ffn.south);
+\draw[flow] (decoder-ffn.north)--(decoder-add3.south);
+\draw[flow] (decoder-add3.north)--(decoder-final.south);
+\draw[flow] (decoder-final.north)--(decoder-out.south);
+\draw[flow] (decoder-out.north)--(2187.5,235);
+\draw[flow] (2187.5,1355)--(2333,1355)--(2333,990)--(decoder-add1.east);
+\draw[flow] (2188,948)--(2330,948)--(2330,690)--(decoder-add2.east);
+\draw[flow] (2188,660)--(2310,660)--(2310,467)--(decoder-add3.east);
+\draw[flow,dashed] (encoder-out.north)--(887.5,260)--(1525,260)
+ --(1525,793.5)--(decoder-cross.west);
+\node[fill=white,inner sep=5pt,font=\sffamily\fontsize{18}{20}\selectfont]
+ at (1525,417) {K, V};
+% RoPE, Q/K normalization and dimension annotations.
+\draw[flow] (encoder-rope.east)--(encoder-attn.west);
+\draw[flow] (encoder-qknorm.east)--(encoder-attn.north west);
+\draw[callout] (encoder-context.north east)--(encoder-rope.south west);
+\draw[callout] (encoder-heads.west)--(encoder-attn.east);
+\draw[callout] (encoder-dim.west)--(encoder-embed.east);
+\draw[flow] (encoder-down.north)--(encoder-silu.south);
+\draw[flow] (encoder-silu.north)--(encoder-up.south);
+\draw[wire] (encoder-gate.north)|-(encoder-mul.east);
+\draw[wire] (encoder-mul.west)-|(encoder-silu.north);
+\draw[callout] (encoder-down.south east)--(encoder-hidden.north);
+\draw[flow] (decoder-rope.east)--(decoder-attn.west);
+\draw[flow] (decoder-qknorm.east)--(decoder-attn.north west);
+\draw[callout] (decoder-context.north east)--(decoder-rope.south west);
+\draw[callout] (decoder-heads.west)--(decoder-attn.east);
+\draw[callout] (decoder-dim.west)--(decoder-embed.east);
+\draw[flow] (decoder-down.north)--(decoder-silu.south);
+\draw[flow] (decoder-silu.north)--(decoder-up.south);
+\draw[wire] (decoder-gate.north)|-(decoder-mul.east);
+\draw[wire] (decoder-mul.west)-|(decoder-silu.north);
+\draw[callout] (decoder-down.south east)--(decoder-hidden.north);
+\draw[callout] (encoder-detail.east)--(encoder-ffn.west);
+\draw[callout] (decoder-detail.west)--(decoder-ffn.east);
+\draw[callout] (vocabulary.west)--(decoder-out.north east);
 \end{tikzpicture}
