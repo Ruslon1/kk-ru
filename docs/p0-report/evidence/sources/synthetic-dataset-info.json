@@ -1,0 +1,15 @@
+{
+  "dataset": "kk-ru-nllb-synthetic",
+  "format": "jsonl.gz",
+  "files": 6,
+  "input_records": 4000000,
+  "written_records": 3999605,
+  "skipped_records": 395,
+  "features": {
+    "source": "string",
+    "translation": "string"
+  },
+  "source_model": "facebook/nllb-200-3.3B",
+  "source_language": "kaz_Cyrl",
+  "target_language": "rus_Cyrl"
+}

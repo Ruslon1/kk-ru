@@ -1,0 +1,32 @@
+{
+  "backend": "ONNX Runtime CPUExecutionProvider",
+  "reference": "unmodified native PyTorch P0",
+  "cases": [
+    {
+      "source": "Сәлем, бүгін ауа райы қандай?",
+      "translation": "Привет, какая сегодня погода?",
+      "tokens": 11,
+      "encoder_max_abs": 7.62939453125e-06,
+      "logits_max_abs": 1.430511474609375e-05,
+      "greedy_token_match": true
+    },
+    {
+      "source": "Мен Алматыда тұрамын.",
+      "translation": "Я живу в Алматы.",
+      "tokens": 8,
+      "encoder_max_abs": 6.67572021484375e-06,
+      "logits_max_abs": 1.430511474609375e-05,
+      "greedy_token_match": true
+    },
+    {
+      "source": "Қазақстанның астанасы қай қала?",
+      "translation": "Какая столица Казахстана?",
+      "tokens": 7,
+      "encoder_max_abs": 6.198883056640625e-06,
+      "logits_max_abs": 1.430511474609375e-05,
+      "greedy_token_match": true
+    }
+  ],
+  "cache": false,
+  "dtype": "float32"
+}

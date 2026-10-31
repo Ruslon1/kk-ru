@@ -1,0 +1,26 @@
+{
+  "dataset": "kz-transformers/multidomain-kazakh-dataset",
+  "dataset_revision": "7a1fcdf9830b1c34b44b3038aafb672447f41890",
+  "source_files": [
+    "leipzig.csv",
+    "cc100-monolingual-crawled-data.csv",
+    "oscar.csv",
+    "kazakhNews.csv",
+    "kazakhBooks.csv"
+  ],
+  "config": "",
+  "split": "train",
+  "text_field": "text",
+  "output": "data/monolingual/kazakh.sentences.txt",
+  "documents_read": 3260296,
+  "sentences_after_filter": 4173805,
+  "sentences_written": 4000000,
+  "existing_paths": [
+    "/Users/ruslan/Projects/kk-ru/data/filtered/train.kk-ru.tsv",
+    "/Users/ruslan/Projects/kk-ru/data/eval/flores_plus/dev.kk-ru.tsv",
+    "/Users/ruslan/Projects/kk-ru/data/eval/flores_plus/devtest.kk-ru.tsv"
+  ],
+  "existing_sentences_indexed": 7590169,
+  "license_note": "Verify the dataset license before redistributing or training a commercial model.",
+  "output_sha256": "c513e0b44623f26d6a27c039d615bc166f2e546cf26f2268204dfcd86cd20a39"
+}

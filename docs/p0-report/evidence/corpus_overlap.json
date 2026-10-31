@@ -1,0 +1,70 @@
+{
+  "definition": "Exact unique source/pair matches after NFC normalization and stripping",
+  "base": {
+    "rows": 6851060,
+    "invalid_columns": 0,
+    "files": [
+      {
+        "path": "data/filtered/train.kk-ru.tsv",
+        "rows": 6851060,
+        "decompressed_sha256": "37012a4e7261df1e1306bcd944aa1f4d91e4a0911c138ee422e5138ee97d35bf"
+      }
+    ],
+    "overlap": {
+      "dev": {
+        "source": 0,
+        "pair": 0
+      },
+      "devtest": {
+        "source": 0,
+        "pair": 0
+      }
+    }
+  },
+  "synthetic": {
+    "rows": 3999605,
+    "invalid_columns": 0,
+    "files": [
+      {
+        "path": "hf-nllb-kk-ru/rank-00000.jsonl.gz",
+        "rows": 666602,
+        "decompressed_sha256": "6ebbc50165e43db24eb41a8db33310e0a430c39fe1a885f85bebb22c80098351"
+      },
+      {
+        "path": "hf-nllb-kk-ru/rank-00001.jsonl.gz",
+        "rows": 666612,
+        "decompressed_sha256": "2618eb351bfd3fb33dd777b8fd181eb055bd9f6f64f2f6008742b5155b3a353a"
+      },
+      {
+        "path": "hf-nllb-kk-ru/rank-00002.jsonl.gz",
+        "rows": 666599,
+        "decompressed_sha256": "03eff3940e0962f514f2b6090e32ecd6e59de97065c8494e34f91e9c7465643d"
+      },
+      {
+        "path": "hf-nllb-kk-ru/rank-00003.jsonl.gz",
+        "rows": 666603,
+        "decompressed_sha256": "74bc3354846178ca8583e90d8f0d9e061c9277f9d363b60a58a64ca84bf1719d"
+      },
+      {
+        "path": "hf-nllb-kk-ru/rank-00004.jsonl.gz",
+        "rows": 666592,
+        "decompressed_sha256": "be022ef4a378161d3047033e927876c271405f8654a4c1206f6e3cb820fe1e47"
+      },
+      {
+        "path": "hf-nllb-kk-ru/rank-00005.jsonl.gz",
+        "rows": 666597,
+        "decompressed_sha256": "cd5c2928d0d0884a59be0dc3a63e1ca7b30fe0c61767b47ec1a7a0a3ca5fab48"
+      }
+    ],
+    "overlap": {
+      "dev": {
+        "source": 0,
+        "pair": 0
+      },
+      "devtest": {
+        "source": 0,
+        "pair": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "evaluation_date": "2026-10-31",
+  "source_git_revision": "b132f12c91dff745db5e9383b0f16eee46b2541c",
+  "parameters": 202016256,
+  "parameter_breakdown": {
+    "embedding": 16384000,
+    "encoder": 88094208,
+    "decoder": 97537536,
+    "final_decoder_norm": 512
+  },
+  "device": "Apple M4 Pro, 24 GiB unified memory",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "versions": {
+    "torch": "2.14.0",
+    "sentencepiece": "0.2.2",
+    "sacrebleu": "2.6.0",
+    "onnx": "1.23.2",
+    "onnxruntime": "1.31.1",
+    "pytest": "9.1.1"
+  },
+  "eval_token_statistics": {
+    "dev": {
+      "rows": 997,
+      "source_max": 75,
+      "sources_over_256": 0
+    },
+    "devtest": {
+      "rows": 1012,
+      "source_max": 93,
+      "sources_over_256": 0
+    }
+  }
+}

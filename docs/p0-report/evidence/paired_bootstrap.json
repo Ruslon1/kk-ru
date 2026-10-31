@@ -1,0 +1,44 @@
+{
+  "method": "SacreBLEU paired bootstrap",
+  "samples": 1000,
+  "seed": 12345,
+  "alignment_assumption": "KazRush line i corresponds to devtest row i",
+  "signatures": {
+    "BLEU": "nrefs:1|bs:1000|seed:12345|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+    "chrF2++": "nrefs:1|bs:1000|seed:12345|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0"
+  },
+  "results": {
+    "System": [
+      "KazRush",
+      "P0"
+    ],
+    "BLEU": [
+      {
+        "score": 18.88776495202358,
+        "p_value": null,
+        "mean": 18.876847222968948,
+        "ci": 0.9572949223062981
+      },
+      {
+        "score": 20.135800477966736,
+        "p_value": 0.000999000999000999,
+        "mean": 20.123959794843355,
+        "ci": 0.9645553141505427
+      }
+    ],
+    "chrF2++": [
+      {
+        "score": 45.47809771292386,
+        "p_value": null,
+        "mean": 45.468284606933594,
+        "ci": 0.7285232543945312
+      },
+      {
+        "score": 46.48068353950448,
+        "p_value": 0.000999000999000999,
+        "mean": 46.472896575927734,
+        "ci": 0.74005126953125
+      }
+    ]
+  }
+}

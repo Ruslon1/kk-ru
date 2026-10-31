@@ -1,0 +1,31 @@
+{
+  "model": "P0",
+  "split": "devtest",
+  "checkpoint": "checkpoints/p0/best/model.pt",
+  "checkpoint_sha256": "e336d8b8401ab2dab35d1fab305323de752ad5fe73250c83ff8b82922cae9bb3",
+  "dataset_sha256": "867dcb0ac62b096821516eff462d18efd1b049a9c17715026f755d7d00e21bcb",
+  "hypotheses_sha256": "163ad02901b4beed61dbe8d9ee95bc74113fce3dd69649b5217ef0b13640edc2",
+  "parameters": 202016256,
+  "device": "mps",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "beam": 5,
+  "batch_size": 16,
+  "max_len": 256,
+  "length_penalty": 0.6,
+  "dtype": "torch.float32",
+  "torch_version": "2.14.0",
+  "sacrebleu_version": "2.6.0",
+  "rows": 16,
+  "bleu": 20.410332856397336,
+  "chrf": 50.943232206514075,
+  "chrf++": 47.71626057544264,
+  "ter": 70.99236641221374,
+  "signatures": {
+    "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+    "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+    "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+    "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+  },
+  "empty_hypotheses": 0,
+  "length_ratio_words": 0.9363867684478372
+}

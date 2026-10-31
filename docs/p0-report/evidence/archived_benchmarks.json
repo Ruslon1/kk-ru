@@ -1,0 +1,149 @@
+{
+  "results": [
+    {
+      "model": "KazRush KK-RU",
+      "path": "reports/kazRush-devtest.hyp.txt",
+      "sha256": "0a29b50e9372eacccf01b55cc02c694ff1feb7a6ab29fe234a443f2b6ac0ad73",
+      "alignment": "positional alignment assumed; archive has no source identifiers",
+      "rows": 1012,
+      "bleu": 18.88776495202358,
+      "chrf": 48.700724014750776,
+      "chrf++": 45.47809771292386,
+      "ter": 71.46781989315696,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 0.9464767234800305
+    },
+    {
+      "model": "Google Translate",
+      "path": "reports/google-translate/devtest.hyp.txt",
+      "sha256": "78d0c08f1739106c8f90b092e4419b9b487053351c2e763c2f7362006d4ad71c",
+      "alignment": "positional alignment assumed; archive has no source identifiers",
+      "rows": 1012,
+      "bleu": 21.832177905323146,
+      "chrf": 49.49352513998388,
+      "chrf++": 46.622870987321065,
+      "ter": 67.01602645637243,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 0.830475705927245
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "path": "reports/qwen3-0.6b/devtest.jsonl",
+      "sha256": "1c6cdd65037e6ba3a8b921d2e7959eb24be5761f33e4fa3b48a3751f53118d1a",
+      "alignment": "source and reference verified for every indexed record",
+      "rows": 1012,
+      "bleu": 0.9938670923675587,
+      "chrf": 16.390497122364735,
+      "chrf++": 13.888852301197998,
+      "ter": 100.71228694988552,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 0.826405494785042
+    },
+    {
+      "model": "gpt-6-luna (batched)",
+      "path": "reports/a6api-gpt-6-luna-batched/devtest.jsonl",
+      "sha256": "dd68742b6c30aff76574760f95ab90072e01c3c2174d655c8ba7d18572560f0a",
+      "alignment": "source and reference verified for every indexed record",
+      "rows": 1012,
+      "bleu": 24.33412775203141,
+      "chrf": 53.70974414964365,
+      "chrf++": 50.57245427809439,
+      "ter": 65.1589926227423,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 0.9412872042737217
+    },
+    {
+      "model": "qwen/qwen3.8-27b",
+      "path": "reports/openrouter/models/qwen-3.8-27b/records.jsonl",
+      "sha256": "7cd99fd416677b1f15bd49fecae83c3861c4e63e89e8eacc5c693082fd25d927",
+      "alignment": "source and reference verified for every indexed record",
+      "rows": 1012,
+      "bleu": 21.873438084997105,
+      "chrf": 51.24098048602151,
+      "chrf++": 48.095543012573984,
+      "ter": 69.66166369880438,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 0.9673365555838209
+    },
+    {
+      "model": "google/gemma-4-26b-a4b-it",
+      "path": "reports/openrouter/models/gemma-4-26b-a4b-it/records.jsonl",
+      "sha256": "0fc5e0807a9cfbfc34fd571440567a0f5e9577d57432cbc4353fd80e305ab511",
+      "alignment": "source and reference verified for every indexed record",
+      "rows": 1012,
+      "bleu": 21.69342371912751,
+      "chrf": 51.38502288351084,
+      "chrf++": 48.21440431144014,
+      "ter": 69.2292037649453,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 0.9657084711269397
+    },
+    {
+      "model": "google/gemma-4-31b-it",
+      "path": "reports/openrouter/models/gemma-4-31b-it/records.jsonl",
+      "sha256": "c7f4288a78d9ca11f973de1c9e45843654a67721b6f80d9eb3c3e8a228453fbd",
+      "alignment": "source and reference verified for every indexed record",
+      "rows": 1012,
+      "bleu": 18.836212938783042,
+      "chrf": 50.31768521798086,
+      "chrf++": 47.09803346997404,
+      "ter": 94.65276011193082,
+      "signatures": {
+        "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+        "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+        "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+        "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+      },
+      "empty_hypotheses": 0,
+      "length_ratio_words": 1.2376494530653777
+    }
+  ],
+  "excluded": [
+    {
+      "model": "gpt-6-luna (single)",
+      "path": "reports/a6api-gpt-6-luna/devtest.jsonl",
+      "reason": "208"
+    },
+    {
+      "model": "Unidentified legacy P0 output",
+      "path": "reports/devtest.hyp.txt",
+      "reason": "Expected 1012 hypotheses, found 1011"
+    }
+  ]
+}

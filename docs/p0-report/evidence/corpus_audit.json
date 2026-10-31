@@ -1,0 +1,32 @@
+{
+  "dev": {
+    "rows": 997,
+    "sha256": "315f7defe72924dc3c87c1e69107d4efeb54eacbc9b3fe2bcfa8c74a5386d352"
+  },
+  "devtest": {
+    "rows": 1012,
+    "sha256": "867dcb0ac62b096821516eff462d18efd1b049a9c17715026f755d7d00e21bcb"
+  },
+  "base_corpus": {
+    "path": "data/filtered/train.kk-ru.tsv",
+    "rows": 6851060,
+    "invalid_columns": 0,
+    "sha256": "37012a4e7261df1e1306bcd944aa1f4d91e4a0911c138ee422e5138ee97d35bf",
+    "source_word_length_buckets": {
+      "short": 1386802,
+      "medium": 4803662,
+      "long": 660596
+    }
+  },
+  "base_evaluation_overlap": {
+    "dev": {
+      "source": 0,
+      "pair": 0
+    },
+    "devtest": {
+      "source": 0,
+      "pair": 0
+    }
+  },
+  "overlap_definition": "NFC normalization and stripping; exact source or exact pair; unique matching evaluation strings"
+}

@@ -1,0 +1,14 @@
+{
+  "model_type": 1,
+  "vocabulary": 32000,
+  "character_coverage": 0.9994999766349792,
+  "input_sentence_size": 5000000,
+  "normalization": "nmt_nfkc",
+  "special_tokens": {
+    "unk": 0,
+    "bos": 1,
+    "eos": 2,
+    "pad": 3
+  },
+  "sha256": "2edd3aa510364694cd29b4fde437ef54b33c6e70ed1173be71b17de292ea727a"
+}

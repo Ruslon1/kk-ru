@@ -1,0 +1,33 @@
+{
+  "model": "P0",
+  "split": "dev",
+  "checkpoint": "checkpoints/p0/best/model.pt",
+  "checkpoint_sha256": "e336d8b8401ab2dab35d1fab305323de752ad5fe73250c83ff8b82922cae9bb3",
+  "dataset_sha256": "315f7defe72924dc3c87c1e69107d4efeb54eacbc9b3fe2bcfa8c74a5386d352",
+  "hypotheses_sha256": "af58963189b0aa0d2a824855bb949788f3f597d484d1daa3fc3c5beaf09ee566",
+  "parameters": 202016256,
+  "device": "mps",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "beam": 5,
+  "batch_size": 16,
+  "max_len": 256,
+  "length_penalty": 0.6,
+  "dtype": "torch.float32",
+  "inference_seconds_including_first_batch": 110.56204808002803,
+  "sentences_per_second": 9.017560883806551,
+  "torch_version": "2.14.0",
+  "sacrebleu_version": "2.6.0",
+  "rows": 997,
+  "bleu": 20.305302020083378,
+  "chrf": 49.45838420464422,
+  "chrf++": 46.40312162487146,
+  "ter": 69.72496216272637,
+  "signatures": {
+    "bleu": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+    "chrf": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+    "chrf++": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+    "ter": "nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0"
+  },
+  "empty_hypotheses": 0,
+  "length_ratio_words": 0.9271436772611032
+}

@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- /Users/ruslan/Projects/kk-ru/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/ruslan/Projects/kk-ru
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 29 items
+
+tests/test_diffusion.py::DiffusionTests::test_adarmsnorm_uses_timestep_conditioning PASSED [  3%]
+tests/test_diffusion.py::DiffusionTests::test_base_config_remains_valid_without_diffusion_section PASSED [  6%]
+tests/test_diffusion.py::DiffusionTests::test_corruption_masks_at_least_one_token_per_nonempty_row PASSED [ 10%]
+tests/test_diffusion.py::DiffusionTests::test_corruption_masks_valid_tokens_and_fully_masks_terminal_step PASSED [ 13%]
+tests/test_diffusion.py::DiffusionTests::test_decoder_is_bidirectional_and_outputs_only_vocabulary_logits PASSED [ 17%]
+tests/test_diffusion.py::DiffusionTests::test_lengths_include_all_nonpadding_tokens PASSED [ 20%]
+tests/test_diffusion.py::DiffusionTests::test_masked_loss_only_scores_corrupted_positions PASSED [ 24%]
+tests/test_diffusion.py::DiffusionTests::test_reverse_step_reveals_high_confidence_then_finishes PASSED [ 27%]
+tests/test_diffusion.py::DiffusionTests::test_translation_runs_all_reverse_steps_and_returns_text PASSED [ 31%]
+tests/test_merge_synthetic.py::MergeSyntheticTests::test_failed_merge_preserves_previous_output PASSED [ 34%]
+tests/test_merge_synthetic.py::MergeSyntheticTests::test_merge_deduplicates_and_is_reproducible PASSED [ 37%]
+tests/test_metrics.py::MetricsTests::test_calculates_lexical_metrics PASSED [ 41%]
+tests/test_metrics.py::MetricsTests::test_p0_evaluation_includes_ter PASSED [ 44%]
+tests/test_metrics.py::MetricsTests::test_records_optional_metric_import_errors PASSED [ 48%]
+tests/test_metrics.py::MetricsTests::test_rejects_misaligned_rows PASSED [ 51%]
+tests/test_monolingual.py::test_split_sentences_normalizes_whitespace PASSED [ 55%]
+tests/test_monolingual.py::test_kazakh_filter_rejects_links_and_short_noise PASSED [ 58%]
+tests/test_monolingual.py::test_sentence_hash_is_stable PASSED           [ 62%]
+tests/test_nllb_pipeline.py::NllbPipelineTests::test_length_bucketing_keeps_indices_and_groups_similar_lengths PASSED [ 65%]
+tests/test_nllb_pipeline.py::NllbPipelineTests::test_rank_shards_cover_nonempty_input_without_overlap PASSED [ 68%]
+tests/test_nllb_pipeline.py::NllbPipelineTests::test_resume_compacts_duplicate_successes PASSED [ 72%]
+tests/test_nllb_pipeline.py::NllbPipelineTests::test_resume_keeps_successes_and_removes_errors_and_partial_record PASSED [ 75%]
+tests/test_nllb_pipeline.py::NllbPipelineTests::test_validator_can_reuse_its_sqlite_index PASSED [ 79%]
+tests/test_nllb_pipeline.py::NllbPipelineTests::test_validator_rejects_source_index_mismatch PASSED [ 82%]
+tests/test_prepare_translation_benchmark.py::test_bucket_boundaries PASSED [ 86%]
+tests/test_prepare_translation_benchmark.py::test_reservoir_is_deterministic PASSED [ 89%]
+tests/test_train_resume.py::TrainResumeTests::test_exact_resume_keeps_checkpoint_cursor_and_phase_progress PASSED [ 93%]
+tests/test_train_resume.py::TrainResumeTests::test_new_data_phase_resets_cursor_but_keeps_global_step PASSED [ 96%]
+tests/test_train_resume.py::TrainResumeTests::test_new_data_schedule_restarts_without_resetting_optimizer_state PASSED [100%]
+
+- generated xml file: /Users/ruslan/Projects/kk-ru/docs/p0-report/evidence/tests.xml -
+============================== 29 passed in 1.19s ==============================

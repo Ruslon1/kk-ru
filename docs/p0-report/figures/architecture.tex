@@ -1,0 +1,46 @@
+\begin{tikzpicture}[
+ font=\small, flow/.style={-{Latex[length=2mm]},thick,draw=ink!75},
+ box/.style={draw=ink!30,rounded corners=2mm,fill=white,
+ minimum width=5cm,minimum height=0.72cm,align=center},
+ enc/.style={box,fill=teal!7,draw=teal!45},
+ dec/.style={box,fill=blue!5,draw=blue!35},
+ note/.style={font=\scriptsize,text=ink!75,align=center}]
+\node[box] (src) at (0,0) {Kazakh source tokens $x$};
+\node[box] (tgt) at (7.1,0) {Shifted Russian target tokens $y_{<t}$};
+\node[enc] (se) at (0,1.05) {Token embedding $E$};
+\node[dec] (te) at (7.1,1.05) {Token embedding $E$ (shared)};
+\node[enc,minimum height=1.12cm] (ea) at (0,2.65)
+ {Pre-RMSNorm $\rightarrow$ self-attention\\
+ 8 query / 8 KV heads; bidirectional\\Q/K RMSNorm + RoPE; residual add};
+\node[enc,minimum height=0.9cm] (ef) at (0,4.2)
+ {Pre-RMSNorm $\rightarrow$ SwiGLU\\$512 \rightarrow 4096 \rightarrow 512$; residual add};
+\node[dec,minimum height=1.12cm] (da) at (7.1,2.65)
+ {Pre-RMSNorm $\rightarrow$ causal self-attention\\
+ 8 query / 4 KV heads (GQA)\\Q/K RMSNorm + RoPE; residual add};
+\node[dec,minimum height=0.95cm] (dc) at (7.1,4.2)
+ {Pre-RMSNorm $\rightarrow$ cross-attention\\8 query / 8 KV heads; residual add};
+\node[dec,minimum height=0.9cm] (df) at (7.1,5.6)
+ {Pre-RMSNorm $\rightarrow$ SwiGLU\\$512 \rightarrow 4096 \rightarrow 512$; residual add};
+\begin{scope}[on background layer]
+ \node[draw=teal!65,rounded corners=3mm,fill=teal!3,
+ fit=(ea)(ef),inner xsep=3mm,inner ysep=4mm] (eblock) {};
+ \node[draw=blue!50,rounded corners=3mm,fill=blue!2,
+ fit=(da)(dc)(df),inner xsep=3mm,inner ysep=4mm] (dblock) {};
+\end{scope}
+\node[note,anchor=south west] at (eblock.north west) {ENCODER BLOCK $\times\,12$};
+\node[note,anchor=south west] at (dblock.north west) {DECODER BLOCK $\times\,12$};
+\node[enc] (mem) at (0,6.4) {Encoder memory $H_x$};
+\node[dec] (norm) at (7.1,7.5) {Final decoder RMSNorm};
+\node[box] (logits) at (7.1,8.6) {Tied projection $h_t E^\top$; 32\,000 logits};
+\node[box] (out) at (7.1,9.7) {Next Russian token; repeat until EOS};
+\draw[flow] (src)--(se);\draw[flow] (se)--(ea);\draw[flow] (ea)--(ef);\draw[flow] (ef)--(mem);
+\draw[flow] (tgt)--(te);\draw[flow] (te)--(da);\draw[flow] (da)--(dc);
+\draw[flow] (dc)--(df);\draw[flow] (df)--(norm);\draw[flow] (norm)--(logits);
+\draw[flow] (logits)--(out);
+\draw[flow,draw=teal!80!black]
+ (mem.east)--(3.55,6.4)--(3.55,4.2)--node[above,note]{K, V}(dc.west);
+\node[note,text width=4.8cm] at (0,8)
+ {$d_{\mathrm{model}}=512$, head size $64$\\Shared source/target vocabulary\\
+ 202\,016\,256 trainable parameters\\[2mm]Training: teacher forcing\\
+ Inference: beam search with self-attention KV-cache};
+\end{tikzpicture}

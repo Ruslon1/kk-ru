@@ -1,0 +1,529 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=25mm,headheight=15pt]{geometry}
+\usepackage{fontspec}
+\setmainfont{NotoSerif}[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,
+ BoldFont=*-Bold,ItalicFont=*-Italic,BoldItalicFont=*-BoldItalic]
+\setsansfont{NotoSans}[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold]
+\setmonofont{NotoSansMono-Regular.ttf}[Path=fonts/,Scale=0.78]
+\newfontfamily\examplefont{NotoSerif}[Path=fonts/,Extension=.ttf,
+ UprightFont=*-Regular,BoldFont=*-Bold,ItalicFont=*-Italic,BoldItalicFont=*-BoldItalic,Scale=0.94]
+\usepackage{amsmath,amssymb,booktabs,tabularx,longtable,array}
+\makeatletter\let\tableinput\@@input\makeatother
+\usepackage{graphicx,xcolor,tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xurl,hyperref,enumitem,fancyhdr,caption,listings}
+\definecolor{ink}{HTML}{17334A}
+\definecolor{teal}{HTML}{187F79}
+\definecolor{blue}{HTML}{396CA3}
+\definecolor{muted}{HTML}{546474}
+\hypersetup{colorlinks=true,linkcolor=ink,citecolor=teal,urlcolor=blue,
+ pdftitle={P0: Compact Kazakh-Russian Translation with Synthetic Supervision},
+ pdfauthor={Ruslan Rakhimov}}
+\captionsetup{font=small,labelfont=bf}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{1em}
+\setlength{\emergencystretch}{2em}
+\renewcommand{\arraystretch}{1.14}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\sffamily\color{muted}P0 \textbullet\ Kazakh--Russian translation}
+\fancyhead[R]{\small\sffamily\color{muted}Technical report / working draft}
+\fancyfoot[L]{\small\color{muted}31 October 2026}
+\fancyfoot[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,columns=fullflexible,
+ keepspaces=true,frame=single,rulecolor=\color{ink!20},xleftmargin=3pt,
+ xrightmargin=3pt,aboveskip=8pt,belowskip=8pt}
+\input{generated/numbers}
+\title{\vspace{-1.3cm}\sffamily\bfseries\color{ink}
+ P0: Compact Kazakh--Russian Translation\\with Public Parallel Data and\\NLLB-Generated Supervision}
+\author{Ruslan Rakhimov\\\normalsize Kazakhstan-British Technical University (KBTU)}
+\date{\small Working draft for supervisor discussion\\31 October 2026}
+\begin{document}
+\maketitle\thispagestyle{fancy}
+\begin{abstract}
+We describe P0, a 202-million-parameter autoregressive Transformer for
+Kazakh-to-Russian translation, initialized from scratch and subsequently
+continued with synthetic supervision from NLLB-200 3.3B. The locally available
+base corpus contains 6\,851\,060 parallel pairs. A source-side monolingual
+expansion produced 4\,000\,000 generated records, of which 3\,999\,605 remain
+in the filtered archive. The history comprises an initial public-data stage
+reported to plateau near 17 BLEU and a continuation stage; server training
+curves and the exact proportions of the base/synthetic mixture are still
+being recovered.
+A fresh evaluation on 1\,012 FLORES+ devtest sentences yields \PZeroBLEU{}
+BLEU and \PZeroChrFPP{} chrF++. Rescoring the archived outputs of the main
+competitor, KazRush KK--RU, under the same metric configuration gives
+\KazBLEU{} BLEU and \KazChrFPP{} chrF++. We document the architecture, data,
+evaluation, software tests and ONNX export. Results support the usefulness of
+the system; they do not isolate the causal effect of synthetic data or
+establish an architecture-only advantage.
+\end{abstract}
+\section{Introduction}
+Kazakh-to-Russian translation is a practical setting in which a specialized
+model can offer local execution and a smaller footprint than a general-purpose
+language model. Challenges include assembling noisy parallel resources,
+choosing a compact architecture and evaluating quality reproducibly.
+The main external reference is \texttt{deepvk/kazRush-kk-ru}, a T5-based model
+trained from random initialization on public parallel data~\cite{kazrush,t5}.
+Its model card reports 197M parameters and 18.8 BLEU on FLORES+ devtest.
+P0 targets a similar parameter scale with a custom encoder--decoder.
+
+This report provides an implementation-level description, a fresh FLORES+
+evaluation, a common rescoring of available benchmarks, and an evidence
+package containing signatures, hashes, corpus checks, software-test results
+and reproduction code. The diffusion experiment is outside this draft's scope.
+\paragraph{Evidence status.}
+Architecture and defaults are verified against the current repository.
+Corpus sizes, exact overlaps and primary P0 scores are measured from local
+artifacts. The plateau near 17 BLEU is an author-reported observation.
+Server events, original per-stage configurations and the merged-corpus
+manifest were unavailable. We distinguish these sources rather than
+reconstructing unobserved training curves.
+
+\section{Background and related work}
+P0 follows the Transformer encoder--decoder~\cite{transformer}; KazRush is a
+task-specific T5 baseline~\cite{t5,kazrush}. P0 combines
+RMSNorm~\cite{rmsnorm}, rotary positional embeddings (RoPE)~\cite{rope},
+query/key normalization~\cite{qknorm}, SwiGLU~\cite{swiglu}, and decoder
+grouped-query attention (GQA)~\cite{gqa}. These are established components,
+not novel attention or normalization methods introduced by this work.
+
+NLLB is the multilingual teacher~\cite{nllb}. Generating targets for
+source-language monolingual text is \emph{forward translation}, related to
+sequence-level knowledge distillation~\cite{distillation}. It is not
+back-translation, which starts from target-language text and synthesizes the
+source. Tokenization uses SentencePiece~\cite{sentencepiece}; lexical
+evaluation uses SacreBLEU~\cite{sacrebleu}.
+
+\section{Data}
+\subsection{Public parallel corpus}
+Acquisition scripts support OPUS, WMT19 Kazakh--Russian crawl, KazParC and
+TIL~\cite{opus,kazparc,til}. The filtered training file contains exactly
+\textbf{6\,851\,060 rows}; a full scan found no invalid TSV column counts.
+This is the resulting file size, not per-source contributions. KazParC
+acquisition includes both \texttt{kazparc\_raw} and \texttt{sync\_raw}, so
+public parallel data is not synonymous with entirely human-translated data.
+
+Base filtering removes markup, normalizes to NFC, collapses whitespace,
+drops empty/identical pairs and one-word sides, applies a
+256-whitespace-word ceiling, and deduplicates normalized pairs.
+Optional stages use fastText language identification and LaBSE alignment
+scoring~\cite{labse}, with default threshold 0.55. Because stages can be
+skipped, code alone does not establish the historical filtering settings.
+
+\subsection{Synthetic expansion}
+The monolingual manifest identifies
+\texttt{kz-transformers/multidomain-kazakh-dataset}, revision
+\texttt{7a1fcdf9830b1c34b44b3038aafb672447f41890}, with Leipzig, CC100,
+OSCAR, news and books. Sentence splitting/filtering excludes strings indexed
+from the base corpus and both FLORES splits. The manifest records 3\,260\,296
+input documents and 4\,000\,000 written sentences.
+
+The teacher is \texttt{facebook/nllb-200-3.3B}, using
+\texttt{kaz\_Cyrl} and \texttt{rus\_Cyrl}. Generation is sharded with resumable
+indexed output and validation of missing, duplicate and failed records.
+The dataset card records generation on six RTX 4090 GPUs. Scanning all six
+compressed shards confirms \textbf{3\,999\,605 pairs}; metadata records 395
+filtered records, retaining successful, nonempty, nonidentical translations.
+
+\begin{table}[htbp]\centering
+\caption{Local data artifacts; synthetic archive size is not merged-corpus size.}
+\begin{tabularx}{\linewidth}{@{}Xr@{}}
+\toprule Artifact & Rows / sentences\\\midrule
+Filtered public parallel training corpus & 6\,851\,060\\
+Selected monolingual Kazakh sentences & 4\,000\,000\\
+Filtered NLLB-generated archive & 3\,999\,605\\
+FLORES+ dev & 997\\FLORES+ devtest & 1\,012\\\bottomrule
+\end{tabularx}\end{table}
+The repository supports merging base/generated pairs with normalized
+deduplication and continuing with the existing tokenizer. The final merged
+file and deduplication totals are not local. We do not assert its exact size
+or treat the default mixture as verified historical execution.
+Underlying corpus terms and NLLB's CC-BY-NC-4.0 model license must be
+considered before redistribution or commercial-use claims.
+
+\subsection{Overlap audit and tokenization}
+Both complete corpora were checked against FLORES+ dev/devtest after NFC
+normalization and stripping: \textbf{zero exact source matches and zero exact
+source--reference pair matches} for both corpora/splits. This excludes neither
+near duplicates nor prior benchmark exposure by teachers/external models,
+and does not replace auditing the final server-side merged artifact.
+
+The saved shared tokenizer has 32\,000 unigram pieces, \texttt{nmt\_nfkc}
+normalization, character coverage 0.9995 and a five-million input-sentence
+sampling limit. IDs are UNK=0, BOS=1, EOS=2, PAD=3.
+Sources receive BOS, targets BOS/EOS. Both are truncated to 256 subword
+tokens, forcing terminal target EOS. Teacher forcing shifts the target by
+one; padding labels are ignored. Length-sorted batches are shuffled.
+Maximum dev/devtest source lengths are 75/93 tokens; no source is truncated.
+
+\section{P0 architecture}
+P0 has 12 encoder and 12 decoder blocks, hidden dimension 512, head size 64
+and FFN hidden size 4096. Direct counting gives
+\textbf{202\,016\,256 trainable parameters}, excluding rotary buffers.
+Source embeddings, target embeddings and vocabulary projection share a
+$32\,000\times512$ matrix (Figure~\ref{fig:architecture}).
+\begin{figure}[htbp]\centering
+\resizebox{0.99\linewidth}{!}{\input{figures/architecture}}
+\caption{P0, redrawn from the draw.io reference and checked against code.
+Each pre-normalized attention/FFN sublayer has dropout and a residual add.
+Block patterns repeat 12 times. There is no extra final encoder norm;
+the decoder has one. RoPE and Q/K normalization apply to self-attention,
+not cross-attention. A matching editable draw.io diagram accompanies the source.}
+\label{fig:architecture}\end{figure}
+\begin{table}[htbp]\centering
+\caption{Architecture and parameter allocation.}
+\begin{tabularx}{\linewidth}{@{}Xr@{}}
+\toprule Setting / component & Value\\\midrule
+Encoder / decoder layers & 12 / 12\\
+Model / head / FFN dimension & 512 / 64 / 4096\\
+Encoder self-attention query / KV heads & 8 / 8\\
+Decoder self-attention query / KV heads & 8 / 4\\
+Cross-attention query / KV heads & 8 / 8\\
+Vocabulary / sequence limit & 32\,000 / 256\\
+Residual dropout & 0.1\\\midrule
+Shared embedding parameters & 16\,384\,000\\
+Encoder parameters & 88\,094\,208\\
+Decoder parameters & 97\,537\,536\\
+Final decoder RMSNorm parameters & 512\\
+\textbf{Total} & \textbf{202\,016\,256}\\\bottomrule
+\end{tabularx}\end{table}
+\subsection{Encoder}
+Encoder self-attention is bidirectional, with per-head Q/K RMSNorm and RoPE.
+Each block computes
+\begin{align}
+u &= h+\operatorname{Dropout}(\operatorname{SelfAttn}(\operatorname{RMSNorm}(h))),\\
+h' &= u+\operatorname{Dropout}(\operatorname{SwiGLU}(\operatorname{RMSNorm}(u))),\\
+\operatorname{SwiGLU}(z)&=(\operatorname{SiLU}(zW_g)\odot zW_u)W_d.
+\end{align}
+\subsection{Decoder}
+Each block contains causal GQA self-attention, cross-attention and SwiGLU,
+each pre-normalized with a residual connection. Self-attention has eight
+query and four KV heads; cross-attention has eight of each, without RoPE or
+Q/K normalization. After final RMSNorm,
+\begin{equation}
+p_\theta(y_t\mid y_{<t},x)=\operatorname{softmax}(h_tE^\top).
+\end{equation}
+Attention/FFN projections are bias-free. Weights are randomly initialized,
+not loaded from NLLB or KazRush.
+
+\section{Training procedure}
+\subsection{Objective and optimizer}
+The objective is teacher-forced label-smoothed cross-entropy:
+\begin{align}
+\mathcal{L}(\theta)&=-\frac{1}{N_{\mathrm{valid}}}
+ \sum_{(x,y)}\sum_{t\in\mathrm{valid}}\sum_{v=1}^{V}
+ q_\epsilon(v;y_t)\log p_\theta(v\mid y_{<t},x),\\
+q_\epsilon(v;y_t)&=(1-\epsilon)\mathbf{1}[v=y_t]+\epsilon/V.
+\end{align}
+The current configuration sets $\epsilon=0.1$. AdamW uses
+$\beta=(0.9,0.95)$, weight decay 0.01 for parameters with at least two
+dimensions, no decay on vectors, and global gradient-norm clipping at 1.0.
+\begin{table}[htbp]\centering
+\caption{Current training defaults verified in code/configuration.
+Historical per-stage overrides require server logs.}
+\begin{tabularx}{\linewidth}{@{}Xl@{}}
+\toprule Setting & Current value\\\midrule
+Peak / minimum learning rate & $2\times10^{-4}$ / $5\times10^{-5}$\\
+Warmup / schedule & 2\,000 optimizer steps / cosine\\
+Micro-batch / accumulation & 16 pairs per GPU / 4\\
+Effective batch for six GPUs & 384 pairs\\
+Precision / seed & BF16 autocast / 42\\
+Configured epochs & 3\\
+Evaluation / checkpoint interval & 2\,000 optimizer steps\\\bottomrule
+\end{tabularx}\end{table}
+Accelerate provides mixed precision, accumulation and distributed execution.
+BF16 describes training autocast. The available checkpoint stores FP32 weights
+and the fresh evaluation uses FP32; training precision does not imply
+checkpoint storage precision.
+
+\subsection{Two-stage history}
+\begin{enumerate}
+\item \textbf{Public-data stage.} P0 was trained from scratch on public
+parallel data. The author reports a plateau near \textbf{17 BLEU}.
+Its exact split, step, score series and stopping criterion await the logs.
+\item \textbf{Synthetic-data continuation.} Approximately four million
+Kazakh sentences were translated with NLLB-200 3.3B, filtered and used for
+continued P0 training on a mixture of original and synthetic pairs, as
+confirmed by the author. The documented workflow restores model/optimizer,
+resets the data cursor and creates a fresh schedule. The exact mixture
+proportions, sampling weights, epochs and duration remain to be confirmed.
+\end{enumerate}
+The available best export records global step 116\,000, which alone cannot
+establish per-stage steps/epochs. Its stored 20.3053 BLEU lacks an explicit
+split identifier. A fresh dev run reproduces all four stored metrics exactly,
+corroborating a dev origin; fresh devtest is reported separately below.
+This history motivates a synthetic-supervision hypothesis but is not a
+controlled ablation. The reported plateau and final checkpoint cannot be
+treated as a precisely measured before/after gain under a verified common
+protocol; the pre-continuation checkpoint must be reevaluated.
+
+\subsection{Selection and observability}
+The current trainer selects the best dev export by spBLEU when available,
+otherwise chrF++. Full step checkpoints retain optimizer, scheduler and data
+cursor; the best directory is a weight export. TensorBoard/JSONL log loss,
+learning rate, gradient norm, step time, throughput and GPU memory.
+Training curves are absent because server events are unavailable.
+Recovering them will allow real convergence and compute-cost reporting.
+Software checks in Appendix~\ref{app:tests} test implementation behavior
+separately from translation quality.
+
+\section{Evaluation protocol}
+Local Kazakh/Russian Cyrillic FLORES+ files~\cite{floresplus} have 997 dev
+and 1\,012 devtest pairs. Dev is the intended selection split; devtest is
+the reporting split. SHA-256 fixes local file identities; the original
+upstream revision remains to be recovered.
+
+Fresh P0 evaluation uses \texttt{checkpoints/p0/best/model.pt},
+beam 5, source/generation limits 256, batch 16, and the repository decoder's
+length-normalization exponent 0.6. Self-attention uses a KV-cache.
+Settings were fixed before this full devtest run; there was no devtest
+decoding sweep. Hardware is Apple M4 Pro, 24 GiB unified memory, MPS,
+PyTorch 2.14.0 and FP32 parameters.
+
+\subsection{Metrics}
+We compute case-sensitive BLEU with \texttt{13a} tokenization, chrF, chrF++,
+and TER using SacreBLEU 2.6.0~\cite{bleu,chrf,sacrebleu}, on 0--100 scales.
+chrF++ adds word bigrams to character n-grams; it differs from chrF.
+Lower TER is better. Full signatures are in Appendix~\ref{app:reproduce}.
+No extra postprocessing is added beyond translation decoding/stripping
+and metric-specific normalization. COMET/spBLEU are not newly measured here.
+
+\subsection{Artifacts and confidence}
+KazRush is the main task-specific comparator. Its saved hypothesis file has
+1\,012 nonempty lines, but no source IDs or original generation manifest.
+Positional alignment with FLORES is assumed; exact decoding settings cannot
+be reverified. Rescored 18.89 BLEU / 48.70 chrF is consistent with the card's
+18.8 BLEU / 48.7 chrF, although this is not independent alignment proof.
+
+Other saved runs provide context. Indexed JSONL must match source/reference
+at every index; incomplete archives are excluded. No paid API requests are
+made. Identifiers are reported as saved; versions, hardware and original
+inference settings are not controlled across systems.
+Paired bootstrap uses 1\,000 resamples, seed 12\,345, P0 versus KazRush.
+It is conditional on archived alignment and reflects test-set sampling
+uncertainty, not training-seed variation.
+
+\section{Results}
+\subsection{Fresh evaluation on both splits}
+\begin{table}[htbp]\centering
+\caption{Same P0 checkpoint and fixed decoding settings. Dev is not a second
+held-out test. The dev row exactly reproduces the checkpoint's stored metrics.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Split & Sentences & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$\\
+\midrule
+Dev & 997 & 20.31 & 49.46 & 46.40 & 69.72\\
+Devtest & 1\,012 & \PZeroBLEU & \PZeroChrF & \PZeroChrFPP & \PZeroTER\\
+\bottomrule
+\end{tabular}\end{table}
+\subsection{Primary comparison}
+\begin{table}[htbp]\centering
+\caption{FLORES+ devtest: 1\,012 sentences, common scoring. P0 is newly
+generated; KazRush is rescored from a positional archive.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule System & Params & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$\\
+\midrule
+KazRush KK--RU & 197M$^\dagger$ & \KazBLEU & \KazChrF & \KazChrFPP & \KazTER\\
+\textbf{P0} & 202.0M & \textbf{\PZeroBLEU} & \textbf{\PZeroChrF} &
+\textbf{\PZeroChrFPP} & \textbf{\PZeroTER}\\\bottomrule
+\end{tabular}
+\par\smallskip{\footnotesize $^\dagger$Count from the KazRush model card.}
+\label{tab:primary}\end{table}
+P0 improves over the archive by \textbf{\DeltaBLEU{} BLEU} and
+\textbf{\DeltaChrFPP{} chrF++}, with TER lower by \DeltaTER{} points.
+Systems differ in architecture, tokenization, data and schedule; P0 has
+additional NLLB supervision. This is a system-level comparison, not an
+architecture-only ablation.
+
+\begin{center}\begin{minipage}{\linewidth}\centering
+\captionsetup{hypcap=false}
+\captionof{table}{Paired bootstrap: bootstrap mean and approximate 95\% interval
+half-width returned by SacreBLEU. $p$ compares against KazRush.}
+\begin{tabular}{@{}llrrr@{}}
+\toprule Metric & System & Score & Bootstrap mean $\pm$ half-width & $p$\\\midrule
+\tableinput generated/bootstrap.tex
+\bottomrule
+\end{tabular}\end{minipage}\end{center}
+Both metrics have paired $p=0.0010$ under the alignment assumption.
+Marginal intervals can overlap despite the paired result, because the
+paired test resamples the same sentences for both systems. It does not
+address checkpoint selection, seed variance or hidden test exposure.
+
+\subsection{Context and examples}
+Appendix~\ref{app:benchmarks} inventories all complete, aligned saved runs.
+Some hosted/larger systems score above P0, including Google Translate and
+the batched \texttt{gpt-6-luna} archive. The low saved \texttt{Qwen3-0.6B}
+score describes that prompted run, not the best attainable family performance.
+This collection is not a state-of-the-art claim.
+
+Appendix~\ref{app:examples} shows fixed devtest rows 1 and 3, without ranking
+by sentence scores. Row 1 expresses the main medical claim with wording
+different from the reference. In row 3, P0 produces
+\emph{\examplefont эти ярости} where the reference has
+\emph{\examplefont эти открытия}, a lexical error within plausible Russian.
+Corpus gains do not eliminate meaning-changing errors, and lexical overlap
+is not a full adequacy assessment.
+
+\section{Deployment and verification}
+\subsection{ONNX}
+Separate FP32 encoder and full-prefix decoder ONNX graphs use opset 18,
+dynamic batch/sequence axes, and companion tokenizer metadata.
+The export decomposes RMSNorm/attention into portable operations.
+Encoder output is reused across decoder calls.
+The current export \emph{does not expose a decoder KV-cache}: each step
+resubmits the full prefix. The FP32 bundle is about 898 MiB, with shared
+embeddings independently represented in the separate graphs and an explicit
+decoder output projection. This is functional portability, not an optimized
+Android release.
+
+Three short Kazakh inputs are run end to end through ONNX Runtime CPU,
+comparing every greedy next-token decision against native PyTorch.
+All three sequences agree; details are in the evidence package. This is not
+a full-corpus export-quality evaluation. Android latency/RAM,
+FP16/INT8 quality and accelerator support are unmeasured.
+\subsection{Local inference}
+The full devtest generation takes \EvalSeconds{} seconds in this MPS session,
+or \EvalThroughput{} sentences/s at batch 16, including the first batch and
+excluding model loading/metrics. This is a single throughput observation,
+not warmed single-request latency or an Android estimate.
+
+\section{Limitations and next experiments}
+Limitations include missing server provenance, one final checkpoint,
+one inference platform and the positional KazRush archive. The plateau is
+not tied to a recovered evaluation manifest. Actual mixture size,
+historical overrides, durations and GPU-hours are unknown. Exact overlap
+checks do not exclude near duplicates or teacher exposure. No human
+adequacy/fluency study has been performed.
+The next draft should:
+\begin{enumerate}
+\item recover event files, JSONL, per-stage configurations, run manifests
+and merged-corpus statistics;
+\item evaluate the pre-NLLB checkpoint with identical files and decoding;
+\item regenerate KazRush with a pinned revision, explicit settings and IDs;
+\item compare public-only and mixed-data continuation at matched token/update
+budgets, ideally across several seeds;
+\item tune on dev, add documented neural/human evaluation and confirm on
+independent unseen material;
+\item export a cache-aware decoder and measure mobile quality, memory,
+latency and energy on a named Android device.
+\end{enumerate}
+Repeated development on observed devtest weakens its held-out role;
+major future choices should use dev and independent confirmation.
+\section{Conclusion}
+P0 is a 202.0M-parameter translator with a public-data and NLLB-supervision
+training history. Fresh devtest evaluation gives \PZeroBLEU{} BLEU versus
+\KazBLEU{} for the rescored KazRush archive. The evidence supports a useful
+compact system. Logs and matched continuation experiments are needed to
+quantify the synthetic-data contribution.
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\clearpage\appendix
+\section{Complete local benchmark inventory}
+\label{app:benchmarks}
+\begin{table}[htbp]\centering\small
+\caption{Common rescoring of complete devtest artifacts. API/model names
+are archival identifiers, not verified backend identities. Only P0 is rerun.}
+\begin{tabularx}{\linewidth}{@{}Xrrrr@{}}
+\toprule System / identifier & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$\\
+\midrule
+\tableinput generated/all_benchmarks.tex
+\bottomrule
+\end{tabularx}\end{table}
+Every row has 1\,012 hypotheses. Indexed runs have source/reference checks.
+KazRush and Google Translate rely on positional alignment. Service costs,
+batching and latency are not comparable with P0.
+The incomplete single-request \texttt{gpt-6-luna} archive is excluded,
+as is the unidentified legacy \texttt{reports/devtest.hyp.txt} (1\,011 lines).
+Error-only API experiments are not benchmark results.
+
+For external context, the KazRush card reports NLLB-200 3.3B at 21.5 BLEU /
+50.7 chrF, and KazRush at 18.8 BLEU / 48.7 chrF. These are published numbers,
+not newly rescored rows: no complete local NLLB devtest output was found.
+Model-card COMET values are not combined with unmeasured P0 COMET.
+\clearpage
+\section{Qualitative examples}
+\label{app:examples}
+Text is retained from saved outputs; row numbers are one-based.
+\input{generated/examples}
+\clearpage
+\section{Software-test inventory}
+\label{app:tests}
+All \textbf{29 tests pass}. Pytest discovers five function-based checks
+missed by unittest's 24-test discovery. These are not translation benchmarks.
+The nine diffusion tests inventory the full repository, without adding
+a diffusion study to this report.
+\begin{table}[htbp]\centering
+\caption{Software verification by area.}
+\begin{tabularx}{\linewidth}{@{}Xr@{}}
+\toprule Area & Passing tests\\\midrule
+Training continuation / scheduler & 3\\Translation metrics / alignment & 4\\
+Synthetic merge / failure preservation & 2\\NLLB sharding / resume / validation & 6\\
+Monolingual filtering & 3\\Benchmark sampling & 2\\
+Diffusion implementation (outside report scope) & 9\\\midrule
+\textbf{Total} & \textbf{29}\\\bottomrule
+\end{tabularx}\end{table}
+\begingroup\fontsize{8}{10}\selectfont\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{longtable}{@{}p{3.6cm}p{10.1cm}r@{}}
+\caption{Individual checks; full output and JUnit XML accompany the source.}\\
+\toprule Module & Test & Status\\\midrule\endfirsthead
+\toprule Module & Test & Status\\\midrule\endhead
+\tableinput generated/test_inventory.tex
+\bottomrule
+\end{longtable}\endgroup
+\clearpage
+\section{Reproduction and provenance}
+\label{app:reproduce}
+Run from the repository root. Evidence scripts use PyTorch, SentencePiece,
+PyYAML, SacreBLEU, NumPy and pytest. Export verification also needs ONNX
+and ONNX Runtime. Versions are saved in \texttt{evidence/environment.json}.
+\begin{lstlisting}
+PYTHONPATH=src .venv/bin/python -m pytest tests -v
+PYTHONPATH=src .venv/bin/python docs/p0-report/collect_evidence.py archives
+PYTHONPATH=src .venv/bin/python docs/p0-report/collect_evidence.py corpora
+PYTHONPATH=src .venv/bin/python docs/p0-report/collect_evidence.py p0 --split dev
+PYTHONPATH=src .venv/bin/python docs/p0-report/collect_evidence.py p0 --split devtest
+PYTHONPATH=src .venv/bin/python docs/p0-report/summarize_results.py
+\end{lstlisting}
+Generation appends indexed records and can resume. For a fresh independent
+rerun, move the corresponding \texttt{reports/p0-report/p0-<split>.jsonl}
+aside first. The model/evaluation source revision is
+\texttt{b132f12c91dff745db5e9383b0f16eee46b2541c}; report code is committed
+separately.
+\paragraph{Metric signatures.}
+\begin{lstlisting}
+BLEU:
+nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0
+chrF:
+nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0
+chrF++:
+nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0
+TER:
+nrefs:1|case:lc|tok:tercom|norm:no|punct:yes|asian:no|version:2.6.0
+\end{lstlisting}
+\paragraph{Primary SHA-256 identities.}
+\begin{lstlisting}
+P0 checkpoint:
+e336d8b8401ab2dab35d1fab305323de752ad5fe73250c83ff8b82922cae9bb3
+FLORES+ devtest:
+867dcb0ac62b096821516eff462d18efd1b049a9c17715026f755d7d00e21bcb
+FLORES+ dev:
+315f7defe72924dc3c87c1e69107d4efeb54eacbc9b3fe2bcfa8c74a5386d352
+KazRush archive:
+0a29b50e9372eacccf01b55cc02c694ff1feb7a6ab29fe234a443f2b6ac0ad73
+P0 tokenizer:
+2edd3aa510364694cd29b4fde437ef54b33c6e70ed1173be71b17de292ea727a
+\end{lstlisting}
+Evidence includes config, original checkpoint metadata, downloaded KazRush
+card/config, synthetic metadata, monolingual manifest, corpus hashes/counts,
+bootstrap, examples and tests.
+\paragraph{Before submission.}
+Recover per-stage training manifests, hardware, GPU-hours,
+mixtures and the plateau evaluation; pin the upstream evaluation revision;
+regenerate KazRush. Add curves only from real records. This draft is intended
+to begin supervisor feedback.
+\end{document}
