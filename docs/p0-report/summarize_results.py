@@ -13,6 +13,19 @@ from sacrebleu.significance import PairedTest
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 
+MODEL_URLS = {
+    "nllb-200-distilled-600M": "https://huggingface.co/facebook/nllb-200-distilled-600M",
+    "nllb-200-1.3B": "https://huggingface.co/facebook/nllb-200-1.3B",
+    "nllb-200-distilled-1.3B": "https://huggingface.co/facebook/nllb-200-distilled-1.3B",
+    "nllb-200-3.3B": "https://huggingface.co/facebook/nllb-200-3.3B",
+    "KazRush KK-RU": "https://huggingface.co/deepvk/kazRush-kk-ru",
+    "Qwen3-0.6B": "https://huggingface.co/Qwen/Qwen3-0.6B",
+    "qwen/qwen3.8-27b": "https://openrouter.ai/qwen/qwen3.8-27b",
+    "google/gemma-4-26b-a4b-it": "https://openrouter.ai/google/gemma-4-26b-a4b-it",
+    "google/gemma-4-31b-it": "https://openrouter.ai/google/gemma-4-31b-it",
+    "Google Translate": "https://translate.google.com/",
+}
+
 
 def read(name):
     return json.loads((HERE / "evidence" / name).read_text())
@@ -85,6 +98,8 @@ def main():
         source = published.get(row["model"], {})
         name, size = names.get(row["model"], (row["model"], source.get("size", "---")))
         name = tex(name)
+        if row["model"] in MODEL_URLS:
+            name = rf"\href{{{MODEL_URLS[row['model']]}}}{{{name}}}"
         if row["model"] not in local_names:
             name += r"$^\dagger$"
         if row is p0:

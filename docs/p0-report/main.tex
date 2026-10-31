@@ -12,11 +12,11 @@
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{xurl,hyperref}
-\hypersetup{hidelinks,
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue,
  pdftitle={Compact Kazakh--Russian Translation},
  pdfauthor={Ruslan Rakhimov}}
 \makeatletter
-\renewcommand{\@noticestring}{Technical report. Working draft, 31 October 2026.}
+\renewcommand{\@noticestring}{}
 \makeatother
 \setlength{\emergencystretch}{2em}
 \input{generated/numbers}
@@ -39,26 +39,34 @@ logs remains necessary to quantify the contribution of synthetic data.
 
 \section{Introduction}
 P0 targets local Kazakh-to-Russian translation at roughly 200M parameters.
-The main comparator is \texttt{deepvk/kazRush-kk-ru}, a 197M-parameter
+The main comparator is
+\href{https://huggingface.co/deepvk/kazRush-kk-ru}{\texttt{deepvk/kazRush-kk-ru}}, a 197M-parameter
 T5-based model trained from random initialization on public parallel
 corpora~\cite{kazrush,t5}. P0 uses a custom Transformer encoder--decoder
-and additional supervision from NLLB-200 3.3B~\cite{transformer,nllb}.
+and additional supervision from
+\href{https://huggingface.co/facebook/nllb-200-3.3B}{\texttt{facebook/nllb-200-3.3B}}~\cite{transformer,nllb}.
 The practical question is whether this compact system can improve on
 KazRush while retaining local inference.
 
 \section{Data and training}
 \paragraph{Public data.}
-The acquisition pipeline supports OPUS, WMT19, KazParC and TIL. The locally
+The acquisition pipeline supports
+\href{https://opus.nlpl.eu/}{OPUS},
+\href{https://www.statmt.org/wmt19/}{WMT19},
+\href{https://huggingface.co/datasets/issai/kazparc}{KazParC} and
+\href{https://github.com/turkic-interlingua/til-mt}{TIL}. The locally
 available filtered corpus contains \textbf{6\,851\,060 parallel pairs}.
 Filtering normalizes text, removes markup and invalid pairs, limits sentence
-length, and deduplicates pairs; language identification and LaBSE filtering
+length, and deduplicates pairs; language identification and
+\href{https://arxiv.org/abs/2007.01852}{LaBSE} filtering~\cite{labse}
 are optional. Historical per-source counts and enabled filtering stages
 have not yet been recovered.
 
 \paragraph{Synthetic data.}
 Four million Kazakh sentences were selected from
-\path{kz-transformers/multidomain-kazakh-dataset}, spanning web, news and
-books, and translated with \path{facebook/nllb-200-3.3B}.
+\href{https://huggingface.co/datasets/kz-transformers/multidomain-kazakh-dataset}{\texttt{kz-transformers/multidomain-kazakh-dataset}},
+spanning web, news and books, and translated with
+\href{https://huggingface.co/facebook/nllb-200-3.3B}{\texttt{facebook/nllb-200-3.3B}}.
 The filtered archive contains \textbf{3\,999\,605 pairs}. This is forward
 translation: a teacher supplies Russian targets for Kazakh monolingual
 text~\cite{distillation}. Continued training mixed these pairs with the
