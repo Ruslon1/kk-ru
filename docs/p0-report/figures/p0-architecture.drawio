@@ -5,88 +5,88 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="src" value="Kazakh source tokens x" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#FFFFFF;strokeColor=#64798C;">
+        <mxCell id="src" value="Kazakh source tokens x" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FFFFFF;strokeColor=#000000;">
           <mxGeometry x="60" y="880" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="tgt" value="Shifted Russian tokens y&lt;t" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#FFFFFF;strokeColor=#64798C;">
+        <mxCell id="tgt" value="Shifted Russian tokens y&lt;t" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FFFFFF;strokeColor=#000000;">
           <mxGeometry x="640" y="880" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="se" value="Token embedding E" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#ECF7F5;strokeColor=#187F79;">
+        <mxCell id="se" value="Token embedding E" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FCE0E1;strokeColor=#000000;">
           <mxGeometry x="60" y="790" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="te" value="Token embedding E (shared)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#EEF3FA;strokeColor=#396CA3;">
+        <mxCell id="te" value="Token embedding E (shared)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FCE0E1;strokeColor=#000000;">
           <mxGeometry x="640" y="790" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="ea" value="Pre-RMSNorm → bidirectional self-attention&#10;8 query / 8 KV heads&#10;Q/K RMSNorm + RoPE; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#ECF7F5;strokeColor=#187F79;">
+        <mxCell id="ea" value="Pre-RMSNorm → bidirectional self-attention&#10;8 query / 8 KV heads&#10;Q/K RMSNorm + RoPE; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FFE2BB;strokeColor=#000000;">
           <mxGeometry x="60" y="650" width="360" height="85" as="geometry" />
         </mxCell>
-        <mxCell id="ef" value="Pre-RMSNorm → SwiGLU&#10;512 → 4096 → 512; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#ECF7F5;strokeColor=#187F79;">
+        <mxCell id="ef" value="Pre-RMSNorm → SwiGLU&#10;512 → 4096 → 512; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#C2E8F7;strokeColor=#000000;">
           <mxGeometry x="60" y="510" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="da" value="Pre-RMSNorm → causal self-attention&#10;8 query / 4 KV heads (GQA)&#10;Q/K RMSNorm + RoPE; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#EEF3FA;strokeColor=#396CA3;">
+        <mxCell id="da" value="Pre-RMSNorm → causal self-attention&#10;8 query / 4 KV heads (GQA)&#10;Q/K RMSNorm + RoPE; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FFE2BB;strokeColor=#000000;">
           <mxGeometry x="640" y="650" width="360" height="85" as="geometry" />
         </mxCell>
-        <mxCell id="dc" value="Pre-RMSNorm → cross-attention&#10;8 query / 8 KV heads; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#EEF3FA;strokeColor=#396CA3;">
+        <mxCell id="dc" value="Pre-RMSNorm → cross-attention&#10;8 query / 8 KV heads; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FFE2BB;strokeColor=#000000;">
           <mxGeometry x="640" y="510" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="df" value="Pre-RMSNorm → SwiGLU&#10;512 → 4096 → 512; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#EEF3FA;strokeColor=#396CA3;">
+        <mxCell id="df" value="Pre-RMSNorm → SwiGLU&#10;512 → 4096 → 512; residual add" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#C2E8F7;strokeColor=#000000;">
           <mxGeometry x="640" y="390" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="mem" value="Encoder memory Hx" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#ECF7F5;strokeColor=#187F79;">
+        <mxCell id="mem" value="Encoder memory Hx" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#FFFFFF;strokeColor=#000000;">
           <mxGeometry x="60" y="320" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="norm" value="Final decoder RMSNorm" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#EEF3FA;strokeColor=#396CA3;">
+        <mxCell id="norm" value="Final decoder RMSNorm" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#F2F4C1;strokeColor=#000000;">
           <mxGeometry x="640" y="270" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="logits" value="Tied projection h Eᵀ&#10;32,000 vocabulary logits" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#FFFFFF;strokeColor=#64798C;">
+        <mxCell id="logits" value="Tied projection h Eᵀ&#10;32,000 vocabulary logits" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#DBDFEF;strokeColor=#000000;">
           <mxGeometry x="640" y="160" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="out" value="Next Russian token&#10;Repeat until EOS" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor=#FFFFFF;strokeColor=#64798C;">
+        <mxCell id="out" value="Next Russian token&#10;Repeat until EOS" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor=#CCE7CF;strokeColor=#000000;">
           <mxGeometry x="640" y="60" width="360" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="edge-0" value="" source="src" target="se" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-0" value="" source="src" target="se" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-1" value="" source="se" target="ea" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-1" value="" source="se" target="ea" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-2" value="" source="ea" target="ef" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-2" value="" source="ea" target="ef" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-3" value="" source="ef" target="mem" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-3" value="" source="ef" target="mem" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-4" value="" source="tgt" target="te" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-4" value="" source="tgt" target="te" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-5" value="" source="te" target="da" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-5" value="" source="te" target="da" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-6" value="" source="da" target="dc" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-6" value="" source="da" target="dc" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-7" value="" source="dc" target="df" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-7" value="" source="dc" target="df" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-8" value="" source="df" target="norm" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-8" value="" source="df" target="norm" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-9" value="" source="norm" target="logits" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-9" value="" source="norm" target="logits" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-10" value="" source="logits" target="out" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-10" value="" source="logits" target="out" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge-11" value="K, V" source="mem" target="dc" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;">
+        <mxCell id="edge-11" value="K, V" source="mem" target="dc" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="enc-label" value="Encoder block ×12" vertex="1" parent="1" style="text;whiteSpace=wrap;html=0;fontSize=16;fontColor=#17334A;align=left;">
+        <mxCell id="enc-label" value="Encoder block ×12" vertex="1" parent="1" style="text;whiteSpace=wrap;html=0;fontSize=16;fontFamily=Helvetica;fontColor=#000000;align=left;">
           <mxGeometry x="60" y="470" width="470" height="35" as="geometry" />
         </mxCell>
-        <mxCell id="dec-label" value="Decoder block ×12" vertex="1" parent="1" style="text;whiteSpace=wrap;html=0;fontSize=16;fontColor=#17334A;align=left;">
+        <mxCell id="dec-label" value="Decoder block ×12" vertex="1" parent="1" style="text;whiteSpace=wrap;html=0;fontSize=16;fontFamily=Helvetica;fontColor=#000000;align=left;">
           <mxGeometry x="640" y="350" width="470" height="35" as="geometry" />
         </mxCell>
-        <mxCell id="notes" value="P0 · 202,016,256 parameters&#10;Hidden size 512; head size 64&#10;Shared vocabulary 32,000; limit 256 tokens&#10;Training: teacher forcing&#10;Inference: self-attention KV-cache&#10;No final encoder stack norm" vertex="1" parent="1" style="text;whiteSpace=wrap;html=0;fontSize=16;fontColor=#17334A;align=left;">
+        <mxCell id="notes" value="P0 · 202,016,256 parameters&#10;Hidden size 512; head size 64&#10;Shared vocabulary 32,000; limit 256 tokens&#10;Training: teacher forcing&#10;Inference: self-attention KV-cache&#10;No final encoder stack norm" vertex="1" parent="1" style="text;whiteSpace=wrap;html=0;fontSize=16;fontFamily=Helvetica;fontColor=#000000;align=left;">
           <mxGeometry x="50" y="60" width="470" height="170" as="geometry" />
         </mxCell>
       </root>

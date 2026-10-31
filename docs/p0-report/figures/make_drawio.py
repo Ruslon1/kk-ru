@@ -27,12 +27,16 @@ def main():
         "logits": (640, 160, "Tied projection h Eᵀ\n32,000 vocabulary logits", "plain"),
         "out": (640, 60, "Next Russian token\nRepeat until EOS", "plain"),
     }
-    colors = {"enc": ("#ECF7F5", "#187F79"), "dec": ("#EEF3FA", "#396CA3"),
-              "plain": ("#FFFFFF", "#64798C")}
+    fills = {
+        "se": "#FCE0E1", "te": "#FCE0E1",
+        "ea": "#FFE2BB", "da": "#FFE2BB", "dc": "#FFE2BB",
+        "ef": "#C2E8F7", "df": "#C2E8F7", "norm": "#F2F4C1",
+        "logits": "#DBDFEF", "out": "#CCE7CF",
+    }
     for name, (x, y, label, kind) in nodes.items():
-        fill, stroke = colors[kind]
+        fill, stroke = fills.get(name, "#FFFFFF"), "#000000"
         cell = ET.SubElement(root, "mxCell", id=name, value=label, vertex="1", parent="1",
-                             style=f"rounded=1;whiteSpace=wrap;html=0;fontSize=15;fillColor={fill};strokeColor={stroke};")
+                             style=f"rounded=1;whiteSpace=wrap;html=0;fontFamily=Helvetica;fontSize=15;fillColor={fill};strokeColor={stroke};")
         ET.SubElement(cell, "mxGeometry", x=str(x), y=str(y), width="360",
                       height="85" if name in ("ea", "da") else "65", **{"as": "geometry"})
     edges = [("src", "se"), ("se", "ea"), ("ea", "ef"), ("ef", "mem"),
@@ -42,7 +46,7 @@ def main():
         label = "K, V" if source == "mem" else ""
         edge = ET.SubElement(root, "mxCell", id=f"edge-{index}", value=label,
                              source=source, target=target, edge="1", parent="1",
-                             style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#17334A;fontSize=14;")
+                             style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#000000;fontSize=14;")
         ET.SubElement(edge, "mxGeometry", relative="1", **{"as": "geometry"})
     for name, x, y, label in [
         ("enc-label", 60, 470, "Encoder block ×12"),
@@ -50,7 +54,7 @@ def main():
         ("notes", 50, 60, "P0 · 202,016,256 parameters\nHidden size 512; head size 64\nShared vocabulary 32,000; limit 256 tokens\nTraining: teacher forcing\nInference: self-attention KV-cache\nNo final encoder stack norm"),
     ]:
         cell = ET.SubElement(root, "mxCell", id=name, value=label, vertex="1", parent="1",
-                             style="text;whiteSpace=wrap;html=0;fontSize=16;fontColor=#17334A;align=left;")
+                             style="text;whiteSpace=wrap;html=0;fontSize=16;fontFamily=Helvetica;fontColor=#000000;align=left;")
         ET.SubElement(cell, "mxGeometry", x=str(x), y=str(y), width="470",
                       height="170" if name == "notes" else "35", **{"as": "geometry"})
     path = Path(__file__).with_name("p0-architecture.drawio")

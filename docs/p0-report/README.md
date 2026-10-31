@@ -17,8 +17,12 @@ KazRush comparison. Detailed inventories and provenance stay in this folder.
 - Generated tables: generated/
 
 Open this directory in the Codex LaTeX editor, or upload it to Overleaf and
-select XeLaTeX. Open Noto fonts, including Cyrillic and Kazakh coverage, are
-bundled in fonts/ under the SIL Open Font License.
+select XeLaTeX. The layout uses nips_2017.sty from the supplied Attention Is All You Need
+source, with its author credits preserved. The conference notice is replaced
+by a technical-report notice. TeX Gyre Termes, Heros and Cursor provide the
+Times/Helvetica/Courier typography through the TeX distribution. Bundled
+Noto Serif supplies Cyrillic text under the SIL Open Font License. The
+architecture palette follows the reference figure, with colors by operation.
 Tectonic compilation, from the repository root:
 
     tectonic docs/p0-report/main.tex

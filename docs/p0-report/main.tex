@@ -1,41 +1,31 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage[margin=25mm,headheight=15pt]{geometry}
+\documentclass{article}
+\usepackage[final,nonatbib]{nips_2017}
 \usepackage{fontspec}
-\setmainfont{NotoSerif}[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,
- BoldFont=*-Bold,ItalicFont=*-Italic,BoldItalicFont=*-BoldItalic]
-\setsansfont{NotoSans}[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold]
-\setmonofont{NotoSansMono-Regular.ttf}[Path=fonts/,Scale=0.78]
-\usepackage{amsmath,booktabs,tabularx}
-\usepackage{graphicx,xcolor,tikz}
+\setmainfont{texgyretermes-regular.otf}[
+ BoldFont=texgyretermes-bold.otf,ItalicFont=texgyretermes-italic.otf,
+ BoldItalicFont=texgyretermes-bolditalic.otf]
+\setsansfont{texgyreheros-regular.otf}[BoldFont=texgyreheros-bold.otf]
+\setmonofont{texgyrecursor-regular.otf}[Scale=MatchLowercase]
+\newfontfamily\cyrillicfont{NotoSerif}[Path=fonts/,Extension=.ttf,
+ UprightFont=*-Regular,ItalicFont=*-Italic]
+\usepackage{amsmath,booktabs,graphicx,xcolor,tikz,microtype}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
-\usepackage{microtype}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage{xurl,hyperref,fancyhdr,caption}
-\definecolor{ink}{HTML}{17334A}
-\definecolor{teal}{HTML}{187F79}
-\definecolor{blue}{HTML}{396CA3}
-\definecolor{muted}{HTML}{546474}
-\hypersetup{colorlinks=true,linkcolor=ink,citecolor=teal,urlcolor=blue,
+\usepackage{xurl,hyperref}
+\hypersetup{hidelinks,
  pdftitle={P0: Compact Kazakh-Russian Translation with Synthetic Supervision},
  pdfauthor={Ruslan Rakhimov}}
-\captionsetup{font=small,labelfont=bf}
-\setlength{\parskip}{3pt}
-\setlength{\parindent}{1em}
+\makeatletter
+\renewcommand{\@noticestring}{Technical report. Working draft, 31 October 2026.}
+\makeatother
 \setlength{\emergencystretch}{2em}
-\renewcommand{\arraystretch}{1.14}
-\pagestyle{fancy}\fancyhf{}
-\fancyhead[L]{\small\sffamily\color{muted}P0 \textbullet\ Kazakh--Russian translation}
-\fancyhead[R]{\small\sffamily\color{muted}Technical report / working draft}
-\fancyfoot[L]{\small\color{muted}31 October 2026}
-\fancyfoot[R]{\small\thepage}
-\renewcommand{\headrulewidth}{0.3pt}
 \input{generated/numbers}
-\title{\vspace{-1.3cm}\sffamily\bfseries\color{ink}
- P0: Compact Kazakh--Russian Translation\\with NLLB-Generated Supervision}
-\author{Ruslan Rakhimov\\\normalsize Kazakhstan-British Technical University (KBTU)}
-\date{\small Working draft for supervisor discussion\\31 October 2026}
+\title{P0: Compact Kazakh--Russian Translation\\with NLLB-Generated Supervision}
+\author{Ruslan Rakhimov\\
+ \normalfont Kazakhstan-British Technical University (KBTU)}
+\date{}
 \begin{document}
-\maketitle\thispagestyle{fancy}
+\maketitle
 \begin{abstract}
 P0 is a 202M-parameter autoregressive Transformer for Kazakh-to-Russian
 translation. It was trained from scratch on public parallel data, then
@@ -67,8 +57,8 @@ have not yet been recovered.
 
 \paragraph{Synthetic data.}
 Four million Kazakh sentences were selected from
-\texttt{kz-transformers/multidomain-kazakh-dataset}, spanning web, news and
-books, and translated with \texttt{facebook/nllb-200-3.3B}.
+\path{kz-transformers/multidomain-kazakh-dataset}, spanning web, news and
+books, and translated with \path{facebook/nllb-200-3.3B}.
 The filtered archive contains \textbf{3\,999\,605 pairs}. This is forward
 translation: a teacher supplies Russian targets for Kazakh monolingual
 text~\cite{distillation}. Continued training mixed these pairs with the
@@ -154,7 +144,7 @@ alignment. The systems differ in training data as well as architecture.
 The fresh dev run gives 20.31 BLEU, 49.46 chrF, 46.40 chrF++ and 69.72 TER,
 exactly reproducing the checkpoint's stored metrics. These dev scores are
 separate from the devtest comparison. Translation errors remain: on devtest
-row 3, P0 renders the reference's \emph{эти открытия} as \emph{эти ярости},
+row 3, P0 renders the reference's \emph{\cyrillicfont эти открытия} as \emph{\cyrillicfont эти ярости},
 changing the meaning despite fluent surrounding text.
 
 \paragraph{Inference and software checks.}
