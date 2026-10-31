@@ -1,5 +1,5 @@
 % Native TikZ reconstruction of the first page of kk-ru.drawio.
-% Coordinates, colors and short labels follow the original schematic.
+% Layout follows the original schematic; operations follow src/kk_ru/model.py.
 \definecolor{stackgray}{HTML}{D9D9D9}
 \definecolor{stackblue}{HTML}{6AC8FE}
 \definecolor{attentiongray}{HTML}{595959}
@@ -51,8 +51,7 @@
 \node[sum,minimum width=0.29cm,minimum height=0.29cm] (decoder-mul) at (2897,538) {$\times$};
 \node[note,text width=1.425cm] (decoder-heads) at (2661.25,1096.5) {\textcolor{headred}{8} heads};
 \node[box,minimum width=1.5cm,minimum height=0.55cm] (decoder-qknorm) at (1945,977.5) {Q/K RMSNorm};
-\node[box,minimum width=1.7cm,minimum height=0.48cm] (encoder-out) at (887.5,421.5) {Encoder out};
-\node[box,minimum width=1.6cm,minimum height=0.42cm] (encoder-final) at (887.5,498.5) {Final RMSNorm};
+\node[box,minimum width=1.7cm,minimum height=0.48cm] (encoder-out) at (887.5,498.5) {Encoder out};
 \node[box,minimum width=1.6cm,minimum height=0.42cm,fill=stackgray] (encoder-ffn) at (887.5,753.5) {Feed forward};
 \node[box,minimum width=1.6cm,minimum height=0.42cm] (encoder-norm2) at (887.5,933.5) {RMSNorm 2};
 \node[attention,minimum width=2.2cm,minimum height=1.65cm] (encoder-attn) at (887.5,1184) {Bidirectional multi-head\\attention};
@@ -88,8 +87,7 @@
 \draw[flow] (encoder-add1.north)--(encoder-norm2.south);
 \draw[flow] (encoder-norm2.north)--(encoder-ffn.south);
 \draw[flow] (encoder-ffn.north)--(encoder-add2.south);
-\draw[flow] (encoder-add2.north)--(encoder-final.south);
-\draw[flow] (encoder-final.north)--(encoder-out.south);
+\draw[flow] (encoder-add2.north)--(encoder-out.south);
 \draw[flow] (887.5,1417.5)--(1033,1417.5)--(1033,1052.5)--(encoder-add1.east);
 \draw[flow] (887.5,1012.5)--(1030,1012.5)--(1030,623.5)--(encoder-add2.east);
 \draw[flow] (2187.5,1595)--(decoder-tokens.south);
