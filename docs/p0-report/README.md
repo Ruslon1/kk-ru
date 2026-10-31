@@ -3,8 +3,9 @@
 English working draft for a first supervisor discussion. P0 only; diffusion
 results are excluded.
 Author: Ruslan Rakhimov, Kazakhstan-British Technical University (KBTU).
-The concise report retains the model, data/training history and primary
-KazRush comparison. Detailed inventories and provenance stay in this folder.
+The concise report retains the model, data/training history and a comparison
+of all complete local benchmark runs plus published KazRush/NLLB scores.
+Detailed inventories and provenance stay in this folder.
 
 ## Read and edit
 
@@ -28,6 +29,10 @@ Tectonic compilation, from the repository root:
     tectonic docs/p0-report/main.tex
 
 Regenerate numerical tables instead of hand-editing generated/ files.
+The comparison table combines archived_benchmarks.json and p0-devtest.json
+with published_benchmarks.json, transcribed from the saved KazRush model
+card. Published scores and common rescoring are shown in separate panels;
+unmeasured metrics are left blank. Failed/incomplete runs are excluded.
 
 ## Verified results
 

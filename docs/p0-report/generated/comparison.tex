@@ -1,0 +1,21 @@
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\toprule Model & Size & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$ & COMET $\uparrow$\\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Published in the KazRush model card~\cite{kazrush}}}\\[2pt]
+nllb-200-distilled-600M & 600M & 18.0 & 47.3 & --- & --- & 85.6 \\
+KazRush KK-RU & 197M & 18.8 & 48.7 & --- & --- & 86.7 \\
+nllb-200-1.3B & 1.3B & 20.4 & 49.3 & --- & --- & 87.9 \\
+nllb-200-distilled-1.3B & 1.3B & 20.8 & 49.6 & --- & --- & 88.1 \\
+nllb-200-3.3B & 3.3B & 21.5 & 50.7 & --- & --- & 88.7 \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Common rescoring of locally available outputs}}\\[2pt]
+\textbf{P0 (ours)} & 202M & \textbf{20.14} & \textbf{49.55} & \textbf{46.48} & \textbf{69.84} & --- \\
+KazRush KK-RU & 197M & 18.89 & 48.70 & 45.48 & 71.47 & --- \\
+Google Translate & --- & 21.83 & 49.49 & 46.62 & 67.02 & --- \\
+Qwen3-0.6B & 600M & 0.99 & 16.39 & 13.89 & 100.71 & --- \\
+gpt-6-luna (batched) & --- & 24.33 & 53.71 & 50.57 & 65.16 & --- \\
+Qwen3.8-27B & 27B & 21.87 & 51.24 & 48.10 & 69.66 & --- \\
+Gemma-4-26B-A4B-IT & 26B & 21.69 & 51.39 & 48.21 & 69.23 & --- \\
+Gemma-4-31B-IT & 31B & 18.84 & 50.32 & 47.10 & 94.65 & --- \\
+\bottomrule
+\end{tabular*}

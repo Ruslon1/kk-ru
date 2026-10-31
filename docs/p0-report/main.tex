@@ -13,14 +13,14 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{xurl,hyperref}
 \hypersetup{hidelinks,
- pdftitle={P0: Compact Kazakh-Russian Translation with Synthetic Supervision},
+ pdftitle={Compact Kazakh--Russian Translation},
  pdfauthor={Ruslan Rakhimov}}
 \makeatletter
 \renewcommand{\@noticestring}{Technical report. Working draft, 31 October 2026.}
 \makeatother
 \setlength{\emergencystretch}{2em}
 \input{generated/numbers}
-\title{P0: Compact Kazakh--Russian Translation\\with NLLB-Generated Supervision}
+\title{Compact Kazakh--Russian Translation}
 \author{Ruslan Rakhimov\\
  \normalfont Kazakhstan-British Technical University (KBTU)}
 \date{}
@@ -119,17 +119,13 @@ Scoring uses SacreBLEU 2.6.0~\cite{sacrebleu}: case-sensitive BLEU with
 \texttt{13a} tokenization, chrF, chrF++ and TER. All scores use a 0--100
 scale; lower TER is better.
 
-\begin{table}[!ht]\centering
-\caption{FLORES+ devtest, 1\,012 pairs, common scoring.
-KazRush parameter count is from its model card.}
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule System & Params & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$\\
-\midrule
-KazRush KK--RU & 197M & \KazBLEU & \KazChrF & \KazChrFPP & \KazTER\\
-\textbf{P0} & 202M & \textbf{\PZeroBLEU} & \textbf{\PZeroChrF} &
-\textbf{\PZeroChrFPP} & \textbf{\PZeroTER}\\
-\bottomrule
-\end{tabular}
+\begin{table}[!ht]\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{FLORES+ devtest comparison. Upper panel: published values.
+Lower panel: common scoring of 1\,012 translations; only P0 is newly
+generated. Dashes indicate unavailable measurements. COMET follows the
+model card's 0--100 scale.}
+\input{generated/comparison}
 \label{tab:results}
 \end{table}
 
@@ -140,6 +136,10 @@ P0 outputs were generated afresh; KazRush outputs were rescored from a
 original decoding settings. Paired bootstrap testing (1\,000 resamples,
 seed 12\,345) gives $p=0.0010$ for BLEU and chrF++, conditional on this
 alignment. The systems differ in training data as well as architecture.
+The published NLLB values use the KazRush authors' evaluation protocol;
+they were not rerun here. Hosted-model names and sizes follow the saved
+identifiers; backend versions are unverified. Incomplete and failed runs
+are excluded.
 
 The fresh dev run gives 20.31 BLEU, 49.46 chrF, 46.40 chrF++ and 69.72 TER,
 exactly reproducing the checkpoint's stored metrics. These dev scores are
@@ -154,7 +154,7 @@ excluding model loading and scoring. Separate encoder/decoder ONNX graphs
 are available; greedy outputs match native PyTorch on three short examples.
 The export has no decoder KV-cache, and mobile performance is unmeasured.
 All 29 repository tests pass; detailed test results, metric signatures,
-hashes and additional archived benchmarks remain in the accompanying
+hashes and archived benchmark details remain in the accompanying
 \texttt{evidence/} and \texttt{generated/} files, with reproduction commands
 in \texttt{README.md}.
 

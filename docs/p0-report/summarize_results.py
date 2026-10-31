@@ -68,6 +68,36 @@ def main():
         table.append(" & ".join(values) + r" \\")
     (generated / "all_benchmarks.tex").write_text("\n".join(table) + "\n")
 
+    names = {
+        "Qwen3-0.6B": ("Qwen3-0.6B", "600M"),
+        "qwen/qwen3.8-27b": ("Qwen3.8-27B", "27B"),
+        "google/gemma-4-26b-a4b-it": ("Gemma-4-26B-A4B-IT", "26B"),
+        "google/gemma-4-31b-it": ("Gemma-4-31B-IT", "31B"),
+    }
+    table = [r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrr@{}}",
+             r"\toprule Model & Size & BLEU $\uparrow$ & chrF $\uparrow$ & chrF++ $\uparrow$ & TER $\downarrow$ & COMET $\uparrow$\\",
+             r"\midrule",
+             r"\multicolumn{7}{@{}l}{\emph{Published in the KazRush model card~\cite{kazrush}}}\\[2pt]"]
+    for row in read("published_benchmarks.json")["results"]:
+        table.append(f"{tex(row['model'])} & {row['size']} & {row['bleu']:.1f} & "
+                     f"{row['chrf']:.1f} & --- & --- & {row['comet']:.1f}" + r" \\")
+    table += [r"\midrule",
+              r"\multicolumn{7}{@{}l}{\emph{Common rescoring of locally available outputs}}\\[2pt]"]
+    for row in [p0, kaz, *[r for r in archives if r is not kaz]]:
+        name, size = names.get(row["model"], (row["model"], "---"))
+        if row is p0:
+            name, size = r"\textbf{P0 (ours)}", "202M"
+        else:
+            name = tex(name)
+        if row is kaz:
+            size = "197M"
+        values = [f"{row[key]:.2f}" for key in ("bleu", "chrf", "chrf++", "ter")]
+        if row is p0:
+            values = [r"\textbf{" + v + "}" for v in values]
+        table.append(" & ".join([name, size, *values, "---"]) + r" \\")
+    table += [r"\bottomrule", r"\end{tabular*}"]
+    (generated / "comparison.tex").write_text("\n".join(table) + "\n")
+
     table = []
     for metric, values in scores.items():
         if metric == "System":

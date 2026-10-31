@@ -1,0 +1,12 @@
+{
+  "source": "https://huggingface.co/deepvk/kazRush-kk-ru",
+  "snapshot": "sources/kazrush-model-card.md",
+  "split": "FLORES+ devtest",
+  "results": [
+    {"model": "nllb-200-distilled-600M", "size": "600M", "bleu": 18.0, "chrf": 47.3, "comet": 85.6},
+    {"model": "KazRush KK-RU", "size": "197M", "bleu": 18.8, "chrf": 48.7, "comet": 86.7},
+    {"model": "nllb-200-1.3B", "size": "1.3B", "bleu": 20.4, "chrf": 49.3, "comet": 87.9},
+    {"model": "nllb-200-distilled-1.3B", "size": "1.3B", "bleu": 20.8, "chrf": 49.6, "comet": 88.1},
+    {"model": "nllb-200-3.3B", "size": "3.3B", "bleu": 21.5, "chrf": 50.7, "comet": 88.7}
+  ]
+}

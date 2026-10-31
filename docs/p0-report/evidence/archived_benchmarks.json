@@ -138,12 +138,12 @@
     {
       "model": "gpt-6-luna (single)",
       "path": "reports/a6api-gpt-6-luna/devtest.jsonl",
-      "reason": "208"
+      "reason": "KeyError: 208"
     },
     {
       "model": "Unidentified legacy P0 output",
       "path": "reports/devtest.hyp.txt",
-      "reason": "Expected 1012 hypotheses, found 1011"
+      "reason": "ValueError: Expected 1012 hypotheses, found 1011"
     }
   ]
 }
