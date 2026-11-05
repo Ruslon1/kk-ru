@@ -16,13 +16,6 @@ class NeuralMetricRuntime:
             self.cache[model_id] = load_from_checkpoint(checkpoint)
         return self.cache[model_id]
 
-    def _load_bertscore(self, model_id: str) -> str:
-        if model_id not in self.cache:
-            import bert_score
-
-            self.cache[model_id] = model_id
-        return self.cache[model_id]
-
 
 def _mean(value: Any) -> float:
     if hasattr(value, "mean"):
@@ -50,6 +43,17 @@ def _metric_error(errors: dict[str, str], name: str, error: Exception) -> None:
     errors[name] = f"{type(error).__name__}: {error}"
 
 
+def compute_lexical_metrics(hypotheses: list[str], references: list[str]) -> dict[str, float]:
+    import sacrebleu
+
+    return {
+        "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
+        "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
+        "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
+        "ter": sacrebleu.corpus_ter(hypotheses, [references]).score,
+    }
+
+
 def compute_translation_metrics(
     hypotheses: list[str],
     references: list[str],
@@ -69,12 +73,7 @@ def compute_translation_metrics(
     except ImportError as error:
         raise RuntimeError("Install sacrebleu to calculate translation metrics") from error
 
-    metrics: dict[str, Any] = {
-        "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
-        "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
-        "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
-        "ter": sacrebleu.corpus_ter(hypotheses, [references]).score,
-    }
+    metrics: dict[str, Any] = compute_lexical_metrics(hypotheses, references)
     errors: dict[str, str] = {}
     try:
         metrics["spbleu"] = sacrebleu.corpus_bleu(
@@ -88,46 +87,33 @@ def compute_translation_metrics(
         {"src": source, "mt": hypothesis, "ref": reference}
         for source, hypothesis, reference in zip(sources, hypotheses, references)
     ]
-    if comet_model:
+    for name, model_id in (
+        ("comet", comet_model),
+        ("cometkiwi", cometkiwi_model),
+        ("xcomet", xcomet_model),
+    ):
+        if not model_id:
+            continue
+        data = (
+            [{"src": source, "mt": hypothesis} for source, hypothesis in zip(sources, hypotheses)]
+            if name == "cometkiwi" else comet_data
+        )
         try:
-            scorer = runtime._load_comet(comet_model)
-            result = scorer.predict(comet_data, batch_size=8, gpus=_gpu_count())
-            metrics["comet"] = _system_score(result)
-            metrics["comet_model"] = comet_model
+            scorer = runtime._load_comet(model_id)
+            result = scorer.predict(data, batch_size=8, gpus=_gpu_count())
+            metrics[name] = _system_score(result)
+            metrics[f"{name}_model"] = model_id
         except Exception as error:
-            _metric_error(errors, "comet", error)
-
-    if cometkiwi_model:
-        try:
-            scorer = runtime._load_comet(cometkiwi_model)
-            result = scorer.predict(
-                [{"src": source, "mt": hypothesis} for source, hypothesis in zip(sources, hypotheses)],
-                batch_size=8,
-                gpus=_gpu_count(),
-            )
-            metrics["cometkiwi"] = _system_score(result)
-            metrics["cometkiwi_model"] = cometkiwi_model
-        except Exception as error:
-            _metric_error(errors, "cometkiwi", error)
-
-    if xcomet_model:
-        try:
-            scorer = runtime._load_comet(xcomet_model)
-            result = scorer.predict(comet_data, batch_size=8, gpus=_gpu_count())
-            metrics["xcomet"] = _system_score(result)
-            metrics["xcomet_model"] = xcomet_model
-        except Exception as error:
-            _metric_error(errors, "xcomet", error)
+            _metric_error(errors, name, error)
 
     if bertscore_model:
         try:
             import bert_score
 
-            model_id = runtime._load_bertscore(bertscore_model)
             _, _, f1 = bert_score.score(
                 hypotheses,
                 references,
-                model_type=model_id,
+                model_type=bertscore_model,
                 lang="ru",
                 rescale_with_baseline=True,
                 verbose=False,

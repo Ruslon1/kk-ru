@@ -15,6 +15,7 @@ from kk_ru.diffusion_model import build_diffusion_model, count_params
 from kk_ru.eval import compute_metrics, translate
 from kk_ru.model import build_model
 from kk_ru.tokenizer import load_tokenizer, validate_vocab
+from kk_ru.utils import get_device
 
 
 def load_state(model, checkpoint: str, device: torch.device) -> None:
@@ -43,9 +44,7 @@ def main() -> None:
     baseline_cfg = load_config(args.baseline_config)
     if cfg.diffusion is None:
         raise ValueError("diffusion config section is required")
-    device = torch.device(
-        "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-    )
+    device = get_device()
 
     diffusion_tokenizer = load_tokenizer(cfg.tokenizer.sp_model, cfg.model.max_len)
     validate_vocab(diffusion_tokenizer, cfg.model.vocab)

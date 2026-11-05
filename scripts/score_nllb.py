@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-import sacrebleu
+from kk_ru.metrics import compute_lexical_metrics
 
 
 def main() -> None:
@@ -45,10 +45,7 @@ def main() -> None:
     references = [pair[1] for pair in refs]
     metrics = {
         "rows": len(refs),
-        "bleu": sacrebleu.corpus_bleu(ordered, [references]).score,
-        "chrf": sacrebleu.corpus_chrf(ordered, [references]).score,
-        "chrf++": sacrebleu.corpus_chrf(ordered, [references], word_order=2).score,
-        "ter": sacrebleu.corpus_ter(ordered, [references]).score,
+        **compute_lexical_metrics(ordered, references),
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(metrics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

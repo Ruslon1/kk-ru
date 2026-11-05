@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
-import importlib.metadata
 import json
 import platform
 import time

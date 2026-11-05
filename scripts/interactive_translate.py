@@ -11,14 +11,7 @@ from kk_ru.config import load_config
 from kk_ru.eval import translate
 from kk_ru.model import build_model
 from kk_ru.tokenizer import load_tokenizer, validate_vocab
-
-
-def device() -> torch.device:
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
+from kk_ru.utils import get_device
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,7 +26,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     cfg = load_config(args.config)
-    target_device = device()
+    target_device = get_device()
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
     validate_vocab(tokenizer, cfg.model.vocab)
 

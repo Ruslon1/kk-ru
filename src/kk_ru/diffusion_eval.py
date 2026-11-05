@@ -13,6 +13,7 @@ from .diffusion_model import build_diffusion_model, count_params
 from .diffusion_ops import reveal_tokens
 from .eval import compute_metrics
 from .tokenizer import load_tokenizer, validate_vocab
+from .utils import get_device
 
 
 @torch.inference_mode()
@@ -125,9 +126,7 @@ def main() -> None:
     cfg = load_config(args.config)
     if cfg.diffusion is None:
         raise ValueError("diffusion config section is required")
-    device = torch.device(
-        "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-    )
+    device = get_device()
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
     validate_vocab(tokenizer, cfg.model.vocab)
     model = build_diffusion_model(cfg.model, cfg.diffusion.steps).to(device)

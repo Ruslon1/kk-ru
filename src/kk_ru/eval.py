@@ -9,8 +9,10 @@ import torch
 
 from .config import load_config
 from .data import iter_pairs
+from .metrics import compute_lexical_metrics
 from .model import build_model
 from .tokenizer import load_tokenizer, validate_vocab
+from .utils import get_device
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,14 +24,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--comet-checkpoint", default=None)
     parser.add_argument("--spbleu", action="store_true", help="compute FLORES spBLEU; may download a tokenizer")
     return parser.parse_args()
-
-
-def _device() -> torch.device:
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
 
 
 @torch.no_grad()
@@ -60,7 +54,7 @@ def beam_search(
     finished = torch.zeros(bsz, beam, dtype=torch.bool, device=device)
 
     cache = None
-    for step in range(max_len):
+    for _ in range(max_len):
         tokens = seqs[:, :, -1:] if cache is not None else seqs
         logits, cache = model.decode(
             tokens.reshape(bsz * beam, -1),
@@ -137,12 +131,7 @@ def compute_metrics(
 ) -> dict:
     import sacrebleu
 
-    metrics = {
-        "bleu": sacrebleu.corpus_bleu(hypotheses, [references]).score,
-        "chrf": sacrebleu.corpus_chrf(hypotheses, [references]).score,
-        "chrf++": sacrebleu.corpus_chrf(hypotheses, [references], word_order=2).score,
-        "ter": sacrebleu.corpus_ter(hypotheses, [references]).score,
-    }
+    metrics = compute_lexical_metrics(hypotheses, references)
     if compute_spbleu:
         try:
             metrics["spbleu"] = sacrebleu.corpus_bleu(
@@ -199,7 +188,7 @@ def evaluate(
 def main() -> None:
     args = parse_args()
     cfg = load_config(args.config, overrides=args.opts)
-    device = _device()
+    device = get_device()
 
     tokenizer = load_tokenizer(cfg.tokenizer.sp_model, max_len=cfg.model.max_len)
     validate_vocab(tokenizer, cfg.model.vocab)

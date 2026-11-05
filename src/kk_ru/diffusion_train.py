@@ -13,7 +13,6 @@ from .tokenizer import load_tokenizer, validate_vocab
 from .train import (
     OVERFIT_LIMIT,
     Trainer,
-    _save_export,
     _write_run_manifest,
     build_optimizer,
     create_accelerator,
@@ -61,46 +60,11 @@ class DiffusionTrainer(Trainer):
             if self.accelerator.sync_gradients:
                 self._optimizer_step(loss, epoch, batch_index)
 
-    def _evaluate(self) -> None:
-        self.accelerator.wait_for_everyone()
-        if self.accelerator.is_main_process and "dev" in self.loaders:
-            raw = self.accelerator.unwrap_model(self.model)
-            metrics, _ = evaluate_diffusion(
-                self.cfg,
-                self.tokenizer,
-                raw,
-                "dev",
-                self.accelerator.device,
-            )
-            raw.train()
-            self.accelerator.log(
-                {f"dev/{name}": value for name, value in metrics.items()},
-                step=self.global_step,
-            )
-            _save_export(
-                self.accelerator,
-                self.model,
-                self.save_root,
-                "latest",
-                self.global_step,
-                metrics,
-            )
-            selection_score = metrics.get("spbleu", metrics["chrf++"])
-            if selection_score > self.best_spbleu:
-                self.best_spbleu = selection_score
-                _save_export(
-                    self.accelerator,
-                    self.model,
-                    self.save_root,
-                    "best",
-                    self.global_step,
-                    metrics,
-                )
-            self.accelerator.print(
-                f"diffusion dev @ step {self.global_step}: "
-                f"bleu {metrics['bleu']:.2f} chrf++ {metrics['chrf++']:.2f}"
-            )
-        self.accelerator.wait_for_everyone()
+    def _evaluate_dev(self, model) -> dict:
+        metrics, _ = evaluate_diffusion(
+            self.cfg, self.tokenizer, model, "dev", self.accelerator.device
+        )
+        return metrics
 
 
 def parse_args() -> argparse.Namespace:

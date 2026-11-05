@@ -1,9 +1,8 @@
 import sys
-import types
 import unittest
 from unittest.mock import patch
 
-from kk_ru.metrics import compute_translation_metrics
+from kk_ru.metrics import compute_lexical_metrics, compute_translation_metrics
 from kk_ru.eval import compute_metrics
 
 
@@ -27,6 +26,17 @@ class FakeSacrebleu:
 
 
 class MetricsTests(unittest.TestCase):
+    def test_real_lexical_metrics_score_identical_translations(self):
+        text = ["Это точный перевод достаточно длинного предложения."]
+
+        metrics = compute_lexical_metrics(text, text)
+
+        self.assertAlmostEqual(metrics["bleu"], 100)
+        self.assertAlmostEqual(metrics["chrf"], 100)
+        self.assertAlmostEqual(metrics["chrf++"], 100)
+        self.assertAlmostEqual(metrics["ter"], 0)
+        self.assertEqual(compute_metrics(text, text), metrics)
+
     def test_calculates_lexical_metrics(self):
         with patch.dict(sys.modules, {"sacrebleu": FakeSacrebleu}):
             metrics = compute_translation_metrics(["перевод"], ["эталон"], ["мәтін"])
@@ -49,11 +59,14 @@ class MetricsTests(unittest.TestCase):
                 ["эталон"],
                 ["мәтін"],
                 comet_model="Unbabel/test",
+                cometkiwi_model="Unbabel/test-kiwi",
+                xcomet_model="Unbabel/test-xcomet",
             )
 
         self.assertIn("metric_errors", metrics)
-        self.assertIn("comet", metrics["metric_errors"])
-        self.assertNotIn("comet", metrics)
+        for name in ("comet", "cometkiwi", "xcomet"):
+            self.assertIn(name, metrics["metric_errors"])
+            self.assertNotIn(name, metrics)
 
     def test_rejects_misaligned_rows(self):
         with self.assertRaises(ValueError):

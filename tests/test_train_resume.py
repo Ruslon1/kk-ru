@@ -33,7 +33,6 @@ class TrainResumeTests(unittest.TestCase):
         optimizer = torch.optim.AdamW([parameter], lr=0.1)
         parameter.grad = torch.tensor(1.0)
         optimizer.step()
-        optimizer_state = optimizer.state[parameter]["step"].clone()
         config = SimpleNamespace(lr=0.1, warmup_steps=2, min_lr=0.01)
         old_scheduler = build_scheduler(optimizer, config, total_steps=10)
         optimizer.step()

@@ -439,9 +439,7 @@ class Trainer:
         self.accelerator.wait_for_everyone()
         if self.accelerator.is_main_process and "dev" in self.loaders:
             raw = self.accelerator.unwrap_model(self.model)
-            metrics = evaluate(
-                self.cfg, self.tokenizer, raw, "dev", self.accelerator.device
-            )
+            metrics = self._evaluate_dev(raw)
             raw.train()
             self.accelerator.log(
                 {f"dev/{name}": value for name, value in metrics.items()},
@@ -471,6 +469,11 @@ class Trainer:
                 f"bleu {metrics['bleu']:.2f} chrf {metrics['chrf']:.2f}"
             )
         self.accelerator.wait_for_everyone()
+
+    def _evaluate_dev(self, model) -> dict:
+        return evaluate(
+            self.cfg, self.tokenizer, model, "dev", self.accelerator.device
+        )
 
 
 def main() -> None:

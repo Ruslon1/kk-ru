@@ -14,6 +14,7 @@ from kk_ru.config import load_config
 from kk_ru.eval import evaluate
 from kk_ru.model import build_model, count_params
 from kk_ru.tokenizer import load_tokenizer, validate_vocab
+from kk_ru.utils import get_device
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,14 +30,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _device() -> torch.device:
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
-
-
 def main() -> None:
     args = parse_args()
     if args.checkpoints is not None and len(args.checkpoints) != len(args.configs):
@@ -45,7 +38,7 @@ def main() -> None:
         str(Path(load_config(path).paths.checkpoints) / "best" / "model.pt")
         for path in args.configs
     ]
-    device = _device()
+    device = get_device()
     rows = []
     for config_path, checkpoint_path in zip(args.configs, checkpoints):
         cfg = load_config(config_path)
