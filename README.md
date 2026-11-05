@@ -108,6 +108,9 @@ records the prompt, model and dataset hashes, runtime versions, and generation
 settings. Choose a new `--out` directory for each run; existing records are never
 overwritten. For a smoke test, use `--split dev --limit 3 --out reports/qwen3.5-0.8b-smoke`.
 
+The completed baseline and comparison with P0, KazRush, and Qwen3-0.6B are in
+[`docs/qwen3.5-0.8b-eval.md`](docs/qwen3.5-0.8b-eval.md).
+
 Подготовка полного серверного цикла NLLB → merge → обучение описана в
 [`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md). Она включает resumable
 shards, проверку полноты и сборку основного merged-корпуса.
