@@ -12,7 +12,7 @@
 | Эпохи | 3 |
 | Precision | BF16 autocast |
 | Optimizer | AdamW (`betas=(0.9, 0.95)`) |
-| Learning rate | `2e-4` → `2e-5`, cosine |
+| Learning rate | `2e-4` → `5e-5` для P0; → `2e-5` для small/large, cosine |
 | Warmup | 2 000 optimizer steps |
 | `eval_every` / `save_every` | 2 000 steps |
 
@@ -24,8 +24,9 @@
 токенов и шагов зависит от итогового merged TSV; пересчитай его перед оценкой
 времени полного обучения.
 
-В token cache: source получает BOS, target получает BOS и EOS; затем обе стороны
-обрезаются до 256 токенов. `target labels = target[:, 1:]`.
+В token cache source получает BOS, target — BOS и EOS; обе стороны обрезаются
+до 256 токенов. Последний target-токен всегда EOS, в том числе после обрезки.
+`target labels = target[:, 1:]`.
 
 | Величина | 1 эпоха | 3 эпохи |
 |---|---:|---:|
@@ -92,25 +93,19 @@ make docker-train MODEL=large GPUS=6 \
 
 ## Время полного запуска
 
-Оценка для CUDA 12.x, BF16, готового token cache и `eval_every=2000`.
-Диапазоны не измерены на этом хосте; перед полным запуском нужна калибровка
-на целевых GPU.
-
-Для 6 × RTX 4090 время полного запуска пока не измерено. Оцени его по
-калибровке ниже: около 53 526 optimizer steps на три эпохи для каждого конфига
-при effective batch 384. На каждой RTX 4090 доступно 24 GB VRAM; для `large`
-при нехватке памяти используй micro-batch 4 и `grad_accum=16`.
-
-Время включает периодическую оценку на dev (997 предложений). Первый запуск
-дополнительно строит token cache.
-
-Калибровка:
+Время на 6 × RTX 4090 пока не измерено. Для filtered-корпуса три эпохи дают
+около 53 526 optimizer steps при effective batch 384. Измерь время шага
+на целевых GPU с CUDA 12.x, BF16 и готовым token cache:
 
 ```bash
 make docker-train MODEL=p0 GPUS=6 \
   OPTS="train.max_steps=100 train.epochs=1 train.save_every=0 train.eval_every=0"
 watch -n 1 nvidia-smi
 ```
+
+Оцени время обучения как число шагов × среднее время шага. Отдельно добавь
+время периодической dev-оценки (997 предложений). При первом запуске также
+строится token cache. Для merged-корпуса сначала пересчитай число шагов.
 
 ## Запуски
 

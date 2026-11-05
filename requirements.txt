@@ -1,5 +1,5 @@
 # Runtime dependencies (training on the 4090 box, Linux, CUDA 12.x).
-# Pin exact versions after a working install: pip freeze > requirements.lock.txt
+# Record the installed versions with: pip freeze > requirements.lock.txt
 torch
 transformers
 accelerate
@@ -18,4 +18,3 @@ pyyaml
 
 # GPU box only (pins an old transformers stack, conflicts with sentence-transformers on macOS):
 # unbabel-comet             # COMET metric
-# opusfilter                # optional final cleanup step; skip if install is painful

@@ -1,16 +1,20 @@
 # KK→RU Neural Machine Translation
 
-Основной baseline — encoder–decoder **~202M** с Pre-LN, RMSNorm,
-RoPE, QK-Norm, SwiGLU), обучение с нуля. Отдельно реализована discrete-diffusion
-модель **~223M** для сравнения с autoregressive baseline. Цель — побить [`deepvk/kazRush-kk-ru`](https://huggingface.co/deepvk/kazRush-kk-ru)
-(197M T5, FLORES+ kk→ru BLEU 18.8 / chrF 48.7 / COMET 86.7) при **том же масштабе и тех же данных**.
+Переводчик с казахского на русский. Основная модель P0 — encoder–decoder
+на **~202M параметров** с Pre-LN, RMSNorm, RoPE, QK-Norm и SwiGLU, обученный
+с нуля. Для сравнения реализована discrete-diffusion модель на **~223M параметров**.
+
+Ориентир — [`deepvk/kazRush-kk-ru`](https://huggingface.co/deepvk/kazRush-kk-ru):
+197M T5, опубликованные FLORES+ kk→ru BLEU 18.8 / chrF 48.7 / COMET 86.7.
+P0 дополнительно обучали на переводах NLLB, поэтому обучающие данные различаются.
+Результаты и условия сравнения описаны в [техническом отчёте](docs/p0-report/README.md).
 
 ## Структура
 
 ```
-configs/p0.yaml        # единственный источник правды по конфигу
+configs/               # конфиги small, p0, large и diffusion
 src/kk_ru/             # библиотека: config, model, tokenizer, data, train, eval
-scripts/               # пайплайн данных (download / filter)
+scripts/               # подготовка данных, бенчмарки и экспорт ONNX
 data/                  # сырые / отфильтрованные данные (вне git)
 checkpoints/           # чекпоинты (вне git)
 reports/               # метрики, графики (вне git)
@@ -88,32 +92,32 @@ python scripts/prepare_translation_benchmark.py
 ```
 
 Команда создаёт `data/benchmark/translation_candidates.tsv`: FLORES dev/devtest,
-5 000 gold-пар из train и 2 000 монолингвальных предложений. Для строк из
-`monolingual` поле `ru` пустое и используется только для quality filtering.
+до 5 000 gold-пар из train и до 2 000 монолингвальных предложений после удаления
+повторов. У строк `monolingual` поле `ru` пустое; они подходят для проверки
+качества без эталона, но не для reference-метрик.
 
 ### Qwen3.5-0.8B baseline on Apple Silicon
 
-With `mlx-lm` installed in the project environment, evaluate the original,
-unquantized `Qwen/Qwen3.5-0.8B` checkpoint on all FLORES+ devtest pairs:
+Install `mlx-lm` in the project environment, then evaluate the unquantized
+`Qwen/Qwen3.5-0.8B` checkpoint on all FLORES+ devtest pairs:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/eval_qwen.py
 ```
 
-The script downloads a pinned model revision into `models/Qwen3.5-0.8B`, uses
-greedy decoding with thinking disabled and a 512-token output limit, and saves
-raw responses, translations, BLEU/chrF/chrF++/TER, and a reproducibility manifest
-under `reports/qwen3.5-0.8b/`. References are used only for scoring. The manifest
-records the prompt, model and dataset hashes, runtime versions, and generation
-settings. Choose a new `--out` directory for each run; existing records are never
-overwritten. For a smoke test, use `--split dev --limit 3 --out reports/qwen3.5-0.8b-smoke`.
+The script downloads a pinned revision into `models/Qwen3.5-0.8B` and uses
+greedy decoding with thinking disabled and a 512-token output limit. It saves
+raw responses, translations, BLEU/chrF/chrF++/TER, the prompt, hashes, runtime
+versions, and settings under `reports/qwen3.5-0.8b/`. References are used only
+for scoring. Each run needs a new `--out` directory. For a smoke test, use
+`--split dev --limit 3 --out reports/qwen3.5-0.8b-smoke`.
 
 The completed baseline and comparison with P0, KazRush, and Qwen3-0.6B are in
 [`docs/qwen3.5-0.8b-eval.md`](docs/qwen3.5-0.8b-eval.md).
 
 Подготовка полного серверного цикла NLLB → merge → обучение описана в
-[`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md). Она включает resumable
-shards, проверку полноты и сборку основного merged-корпуса.
+[`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md). Она включает возобновление
+перевода, проверку полноты shards и сборку merged-корпуса.
 
 Короткий запуск на сервере после распаковки корпуса:
 
@@ -133,25 +137,24 @@ make docker-train MODEL=p0 GPUS=6
 
 ## Конфиг и переопределения
 
-Один YAML — `configs/p0.yaml`. Для свупов править файл не обязательно:
+Основной конфиг P0 — `configs/p0.yaml`. Параметры запуска можно переопределить:
 
 ```bash
-make docker-train MODEL=p0 GPUS=6 OPTS="train.epochs=5 model.d_model=768"
+make docker-train MODEL=p0 GPUS=6 OPTS="train.epochs=5 train.lr=1.0e-4"
 make docker-train MODEL=p0 GPUS=6 OPTS="train.micro_batch_per_gpu=8"
 ```
 
-## Команды
+## Тесты
 
-| Что | Команда |
-|---|---|
-| Собрать Docker | `make docker-build` |
-| Проверить окружение | `make docker-check MODEL=p0 GPUS=6` |
-| Smoke test | `make docker-overfit` |
-| Запустить Docker-обучение | `make docker-train GPUS=6` |
-| Оценить P0 | `make docker-eval MODEL=p0` |
-| Сравнить checkpoints | `make benchmark` |
-| Обучить/оценить diffusion | `make diffusion-train`, `make diffusion-eval` |
-| Запустить тесты | `make test` |
+Установи зависимости проекта и pytest в выбранное Python-окружение:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m pip install -e '.[test]'
+make test
+```
+
+Для существующего `.venv`: `make test PYTHON=.venv/bin/python`.
 
 ## Экспериментальная матрица
 
@@ -179,9 +182,9 @@ accelerate launch --num_processes 1 -m kk_ru.train \
 
 ## Обучение на Linux с NVIDIA Docker
 
-Первый запуск не гарантирован «в один клик»: на сервере должны быть Linux x86_64,
-совместимый NVIDIA driver, Docker с NVIDIA Container Toolkit, шесть RTX 4090 (24 GB на GPU)
-и подготовленные файлы данных. Проверь сервер до переноса файлов:
+Для запуска на шести RTX 4090 (24 GB на GPU) нужны Linux x86_64,
+совместимый NVIDIA driver, Docker с NVIDIA Container Toolkit и подготовленные
+данные. Проверь сервер до переноса файлов:
 
 ```bash
 nvidia-smi
@@ -227,8 +230,7 @@ df -h .
 
 ### Собрать и проверить контейнер
 
-Сборка скачивает CUDA-образ и несколько гигабайт Python/CUDA-пакетов. При медленном
-интернете собери `kk-ru:cuda128` один раз и дождись окончания команды:
+Сборка скачивает CUDA-образ и несколько гигабайт Python/CUDA-пакетов:
 
 ```bash
 make docker-build
@@ -248,10 +250,7 @@ gzip -dc kk-ru-cuda128.tar.gz | docker load
 make docker-check MODEL=p0 GPUS=6
 ```
 
-Если проверка завершилась ошибкой, не запускай длинное обучение: исправь указанную
-проблему с GPU, драйвером, контейнером или файлами. Первый запуск обучения также
-потратит время на создание token cache; этот этап выполняется до появления строк
-обучения в логе.
+Первый запуск обучения строит token cache до появления строк loss в логе.
 
 ### Короткий запуск и обучение
 
@@ -268,11 +267,9 @@ make docker-overfit
 make docker-train MODEL=p0 GPUS=6
 ```
 
-Доступны `MODEL=small`, `MODEL=p0` и `MODEL=large`. По умолчанию это три разных
-конфига; для первого полного эксперимента используй P0. Аргумент `GPUS` должен
-совпадать с числом GPU, которые будут участвовать в запуске. Если на сервере есть
-дополнительная A100, используй шесть одинаковых RTX 4090; смешение разных GPU делает
-скорость обучения менее предсказуемой.
+Доступны `MODEL=small`, `MODEL=p0` и `MODEL=large`; по умолчанию выбран P0.
+`GPUS` задаёт число процессов обучения. Чтобы выбрать конкретные устройства,
+ограничь их видимость для контейнера через Docker `--gpus`.
 
 Снизить micro-batch при нехватке памяти или переопределить другие параметры можно
 без правки YAML. Например, вдвое меньший micro-batch с удвоенным grad accumulation
@@ -292,8 +289,9 @@ loss и метрики при оценке. Для загрузки GPU откр
 watch -n 1 nvidia-smi
 ```
 
-TensorBoard события пишутся в `runs/<model>/kk-ru`, а построчный резервный лог
-optimizer steps — в `runs/<model>/metrics.jsonl`. В JSONL сохраняются loss,
+Каталог логов задан в `paths.logs`: для P0 это `runs/p0-merged-main`.
+В нём сохраняются события TensorBoard в `kk-ru/` и построчный лог
+optimizer steps в `metrics.jsonl`. В JSONL записываются loss,
 learning rate, gradient norm, время шага, throughput токенов и VRAM текущего
 процесса. Открой ещё один терминал на сервере:
 
@@ -309,10 +307,10 @@ docker run --rm -it -p 6006:6006 \
 ssh -L 6006:localhost:6006 USER@SERVER
 ```
 
-Затем открой `http://localhost:6006`. Checkpoints и логи сохраняются в примонтированные
+Затем открой [TensorBoard](http://localhost:6006). Checkpoints и логи сохраняются в примонтированные
 каталоги хоста и останутся после завершения контейнера. Веса и состояние обучения
 сохраняются каждые `save_every` шагов (сейчас 2000); безопаснее останавливать запуск
-после появления очередного `checkpoints/<model>/step-N`. Прерывание до первого
+после появления очередного `step-N` в `paths.checkpoints`. Прерывание до первого
 чекпоинта не сохраняет прогресс.
 
 Продолжить с сохранённого шага можно так:
@@ -327,7 +325,7 @@ make docker-train MODEL=p0 GPUS=6 RESUME=checkpoints/p0-merged-main/step-N
 ### Оценить результат
 
 Dev-оценка запускается во время обучения каждые `eval_every` шагов и обновляет
-`checkpoints/<model>/best/model.pt`. Для финального FLORES+ devtest:
+`best/model.pt` в `paths.checkpoints`. Для финального FLORES+ devtest:
 
 ```bash
 make docker-eval MODEL=p0
@@ -340,6 +338,3 @@ make benchmark
 ```
 
 Итоги появятся в `reports/benchmark.json` и `reports/benchmark.csv`.
-
-Каждый запуск пишет `resolved_config.yaml` и `run_manifest.json` в каталог модели.
-Manifest фиксирует версии Python/PyTorch/CUDA, видимые GPU и время старта.

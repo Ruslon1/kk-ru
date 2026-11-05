@@ -1,6 +1,6 @@
 # Qwen3.5-0.8B KK-to-RU baseline
 
-Evaluation date: 2026-11-05. The original, unedited
+Evaluation date: 2026-11-05. The original
 [`Qwen/Qwen3.5-0.8B`](https://huggingface.co/Qwen/Qwen3.5-0.8B) checkpoint was
 evaluated zero-shot on all 1,012 FLORES+ KK-to-RU devtest pairs. This is the
 instruction-tuned release, not the separately named `Qwen3.5-0.8B-Base` model.
@@ -32,7 +32,7 @@ same test set.
 - Dataset: `data/eval/flores_plus/devtest.kk-ru.tsv`, 1,012 pairs in original order.
 - One sentence per request, zero-shot, thinking explicitly disabled.
 - Greedy decoding (`temperature=0.0`), at most 512 generated tokens per sentence.
-  This is a fixed translation baseline, rather than the model card's sampling preset.
+  These settings differ from the model card's sampling preset.
 - Only whitespace is normalized for scoring. Raw outputs are retained.
 - References are used for scoring only. The prompt and settings were fixed before
   devtest; the preceding smoke test used three dev sentences.
@@ -64,10 +64,9 @@ substitutions. For example, the first source contains `4 айлық тышқан
 (four-month-old mice), whereas the hypothesis says `4-летние пациенты`
 (four-year-old patients).
 
-In this configuration the model is substantially below the project's dedicated
-translation baselines. The result establishes a reproducible starting point;
-it does not measure the best prompt, alternative decoding, fine-tuning, or
-the weight edit from the Weight-Space Programming article.
+With these settings, Qwen3.5-0.8B scores below P0 and KazRush. Alternative
+prompts, decoding settings, fine-tuning, and the Weight-Space Programming
+weight edit were not tested.
 
 ## Reproduction and artifacts
 
@@ -98,7 +97,9 @@ The model file SHA-256 matches Hugging Face's published LFS hash. All 1,012
 records were checked for source/reference alignment, source hash, raw-output
 normalization, token limit, termination metadata, and hypothesis-file agreement.
 All four corpus metrics were independently recomputed from the saved predictions.
-The existing 24 project tests and the three-sentence real-model smoke test passed.
+At evaluation time, all 24 tests discovered by unittest and the three-sentence
+real-model smoke test passed. The current `make test` command uses pytest,
+which also collects function-based tests.
 
 | Artifact | SHA-256 |
 |---|---|

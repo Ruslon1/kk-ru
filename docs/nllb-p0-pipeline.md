@@ -1,8 +1,8 @@
 # NLLB corpus expansion and P0 continuation
 
-Run the commands from the repository root on the 6x RTX 4090 server. The user
-provides and extracts the monolingual archive. NLLB-200 3.3B is CC-BY-NC 4.0;
-confirm the project is within that license before generating the full corpus.
+Run these commands from the repository root on the 6x RTX 4090 server, after
+extracting the monolingual archive. NLLB-200 3.3B uses the CC-BY-NC 4.0 license;
+check that it permits the intended use.
 
 ## 1. Prepare the server
 
@@ -18,10 +18,9 @@ hf download facebook/nllb-200-3.3B --local-dir models/nllb-200-3.3B
 nvidia-smi
 ```
 
-Find the server checkpoint from the interrupted P0 run and verify it contains
-`meta.json`, `model.pt`, and Accelerate state files. Do not use the local
-`checkpoints/step-471` without confirming that it is the intended ~1.5-epoch
-checkpoint. Set its path explicitly below:
+Choose the server checkpoint from the interrupted P0 run. It must contain
+`meta.json`, `model.pt`, and Accelerate state files. Check its saved training
+step and set the path:
 
 ```bash
 export P0_CHECKPOINT=/path/to/server/checkpoints/step-N
@@ -32,9 +31,8 @@ cat "$P0_CHECKPOINT/meta.json"
 ## 2. Establish translation quality and throughput
 
 First score NLLB on `dev`, then use a small representative slice of the
-monolingual corpus for throughput and output inspection. Sweep beam size and
-batch size on this limited run; larger beam counts improve search but reduce
-throughput. Keep a clean output directory for each setting.
+monolingual corpus for throughput and output inspection. Compare beam sizes
+and batch sizes, using a separate output directory for each setting.
 
 ```bash
 torchrun --standalone --nproc_per_node=6 scripts/translate_nllb.py \
@@ -102,10 +100,10 @@ python scripts/score_nllb.py \
   --shards data/synthetic/nllb-devtest --out reports/nllb-devtest.json
 ```
 
-Merge only validated full-corpus shards. Output is rebuilt via temporary files,
-and exact normalized `(Kazakh, Russian)` pairs are deduplicated against both
-the base corpus and other generated pairs. A failed merge leaves the prior
-published output intact.
+Merge the validated full-corpus shards. The merge removes duplicate normalized
+`(Kazakh, Russian)` pairs within and across the base and synthetic corpora.
+It writes temporary files and replaces the destinations after processing all
+input records. An invalid record aborts the merge before that replacement.
 
 ```bash
 python scripts/merge_synthetic.py \
@@ -121,9 +119,8 @@ columns and keep the generated output and SQLite index for reproducibility.
 
 ## 5. Evaluate the P0 checkpoint before training
 
-Evaluate the server's interrupted checkpoint with the existing P0 config and
-tokenizer on both splits. Reports go into a new directory and do not overwrite
-older evaluations.
+Evaluate the interrupted checkpoint with the P0 config and tokenizer on both
+splits. Use new report directories to keep earlier evaluations.
 
 ```bash
 python scripts/benchmark.py --configs configs/p0.yaml \
@@ -135,11 +132,9 @@ python scripts/benchmark.py --configs configs/p0.yaml \
 ```
 
 The benchmark reports BLEU, chrF, chrF++, TER, and spBLEU when the FLORES
-tokenizer is available. `--out` stores the comparison table and `--report-dir`
-stores hypotheses and per-split metrics. The training JSONL logs token loss.
-Evaluation loss is not currently computed by the benchmark, so compare the
-same translation metrics and training loss curves; do not present loss as a
-devtest metric.
+tokenizer is available. `--out` sets the comparison-table path; `--report-dir`
+sets the directory for hypotheses and per-split metrics. Token loss is recorded
+in the training JSONL; the benchmark does not calculate evaluation loss.
 
 ## 6. Train three full merged-data epochs
 

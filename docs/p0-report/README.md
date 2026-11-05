@@ -1,11 +1,9 @@
 # P0 technical report
 
-English working draft for a first supervisor discussion. P0 only; diffusion
-results are excluded.
-Author: Ruslan Rakhimov, Kazakhstan-British Technical University (KBTU).
-The concise report retains the model, data/training history and a comparison
-of all complete local benchmark runs plus published KazRush/NLLB scores.
-Detailed inventories and provenance stay in this folder.
+P0 technical report by Ruslan Rakhimov, Kazakhstan-British Technical University
+(KBTU), prepared for a first supervisor discussion. It covers the model,
+training history, complete local benchmark runs, and published KazRush/NLLB
+scores. Supporting data and provenance are stored in this folder.
 
 ## Read and edit
 
@@ -51,9 +49,9 @@ not regenerated. Alignment is positional; its original inference manifest
 is unavailable. The paper discloses this limitation.
 All four checkpoint metadata scores exactly match the fresh dev run.
 
-All 29 repository tests pass under pytest. Unittest misses five function-based
-tests. Full software checks and benchmark archives are recorded in evidence/
-and generated/, rather than printed as report appendices.
+The saved verification run passed all 29 tests under pytest; unittest missed
+five function-based tests. `make test` now uses pytest. The saved results and
+benchmark archives are in evidence/ and generated/.
 
 The base file has 6,851,060 pairs; six synthetic shards have 3,999,605.
 Full scans found no exact source/pair intersections with dev or devtest
@@ -72,10 +70,10 @@ Run from the repository root:
     PYTHONPATH=src .venv/bin/python docs/p0-report/summarize_results.py
     tectonic docs/p0-report/main.tex
 
-P0 generation writes/resumes indexed JSONL in reports/p0-report/. Move a run
-file aside for fresh independent generation. Keep checkpoint, config, batch
-size and dataset unchanged during resume. No paid API requests are made.
-Large inputs and translation archives stay Git-ignored; compact metrics
+P0 generation appends indexed JSONL in reports/p0-report/ and resumes from
+existing records. Move the run file aside to generate translations afresh.
+Resume with the same checkpoint, config, batch size, and dataset. Evaluation
+runs locally. Large inputs and translation archives are Git-ignored; metrics
 and provenance are stored with the report.
 
 Python dependencies are the project training/evaluation stack plus pytest.
@@ -94,7 +92,7 @@ The measured MPS throughput is not Android performance.
 5. Final merged-corpus manifest and filtering/merge statistics.
 6. Dataset revisions and KazRush inference/model revision.
 
-The plateau is the author's account. No curves or compute totals are
-invented. YAML defaults are labeled as defaults, not historical execution.
-Later supply the original events.out.tfevents files together with the matching
-config and run manifest. Preserve stage names and global-step offsets.
+The plateau is the author's account. Historical curves and compute totals
+require the original events.out.tfevents files, matching configs, and run
+manifests. Preserve stage names and global-step offsets. The report identifies
+current YAML defaults separately from recovered training settings.

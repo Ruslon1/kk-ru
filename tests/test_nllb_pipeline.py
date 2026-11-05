@@ -51,10 +51,11 @@ class NllbPipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "source.tsv"
             source.write_text("zero\n\none\tref\ntwo\nthree\nfour\n", encoding="utf-8")
+            expected = [[(3, "two")], [(4, "three")], [(2, "one")]]
             for rank in range(3):
                 rows = list(NLLB.iter_rank_sources(source, rank, 3, start=1, limit=4))
-                self.assertEqual(NLLB.count_rank_sources(source, rank, 3, start=1, limit=4), len(rows))
-                self.assertTrue(all(1 <= index < 5 for index, _ in rows))
+                self.assertEqual(rows, expected[rank])
+                self.assertEqual(NLLB.count_rank_sources(source, rank, 3, start=1, limit=4), 1)
 
     def test_resume_compacts_duplicate_successes(self):
         with tempfile.TemporaryDirectory() as directory:
