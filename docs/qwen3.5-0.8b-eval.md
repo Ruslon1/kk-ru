@@ -12,6 +12,7 @@ instruction-tuned release, not the separately named `Qwen3.5-0.8B-Base` model.
 | P0, archived translations | 20.14 | 49.55 | 46.48 | 69.84 |
 | KazRush, archived translations | 18.89 | 48.70 | 45.48 | 71.47 |
 | **Qwen3.5-0.8B, this run** | **3.00** | **24.26** | **21.43** | **124.08** |
+| Qwen3.5-0.8B, MLX Q4 | 1.45 | 20.05 | 17.59 | 185.96 |
 | Qwen3-0.6B, archived translations | 0.99 | 16.39 | 13.89 | 100.71 |
 
 All scores were calculated with SacreBLEU 2.6.0 against the current devtest TSV.
@@ -67,6 +68,63 @@ substitutions. For example, the first source contains `4 айлық тышқан
 With these settings, Qwen3.5-0.8B scores below P0 and KazRush. Alternative
 prompts, decoding settings, fine-tuning, and the Weight-Space Programming
 weight edit were not tested.
+
+## Q4 evaluation
+
+A separate 4-bit checkpoint was converted from the verified original weights
+with MLX affine quantization and a group size of 64. Its saved weights were
+reloaded before both the three-sentence dev smoke test and the full devtest run.
+The prompt, chat-template options, decoding settings, dataset hash, runtime
+versions, and metric signatures match the original evaluation.
+
+| Measurement | Original | MLX Q4 |
+|---|---:|---:|
+| BLEU | 3.00 | 1.45 |
+| chrF | 24.26 | 20.05 |
+| chrF++ | 21.43 | 17.59 |
+| TER | 124.08 | 185.96 |
+| Generation time, seconds | 480.68 | 304.81 |
+| Sentences/second | 2.11 | 3.32 |
+| Median sentence latency, seconds | 0.362 | 0.179 |
+| Peak MLX allocation, GB | 1.875 | 0.755 |
+| Generated tokens | 58,782 | 85,585 |
+| Responses cut at the token limit | 24 | 80 |
+| Exact source copies | 71 | 65 |
+| Empty responses | 0 | 0 |
+
+Q4 completes the same test in 36.6% less wall time and reduces peak MLX memory
+by 59.8%, but translation quality falls on all four metrics. It also
+produces more tokens and more truncated responses: 80/1,012 (7.91%), compared
+with 24/1,012 (2.37%). These are observed times for one run of each checkpoint;
+the generated output lengths differ.
+
+The Q4 weight file is **424,026,782 bytes** (424 MB); parameter arrays occupy
+423,938,240 bytes, with an effective 4.508 bits per weight including quantization
+metadata. MLX exports the text model; the original downloaded checkpoint also
+contains vision weights. The quantization format is MLX affine 4-bit.
+
+The saved checkpoint is `models/Qwen3.5-0.8B-4bit/`. Its `conversion.json`
+records the original revision and weight hash, conversion command, quantization
+settings, runtime versions, and Q4 weight hash. Run artifacts follow the same
+layout as the original under `reports/qwen3.5-0.8b-4bit/`.
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/eval_qwen.py \
+  --model models/Qwen3.5-0.8B-4bit --out reports/qwen3.5-0.8b-4bit-rerun
+```
+
+All 1,012 Q4 records were checked against the dataset and their source hashes.
+The normalized hypotheses agree with the raw outputs and saved hypothesis file.
+All four metrics were recomputed from the saved predictions. The Q4 file hash
+was checked against both the smoke-test manifest and full-run manifest.
+The project test command, `make test PYTHON=.venv/bin/python`, passed all
+36 tests and two subtests after the Q4 changes.
+
+| Q4 artifact | SHA-256 |
+|---|---|
+| Safetensors file | `268de1e6659fda36822fe5b4043b916be0840a8f6c533305f96feefcf1ad983d` |
+| Prediction JSONL | `ea7ecea246935dd32eae87b2116ea801d5fcfff64020fb3d96928d284f89baba` |
+| Hypotheses text | `1819f4528261a21ff30841cf5967f85bbbb7e59e5e703a2ef968db3418edd0e0` |
 
 ## Reproduction and artifacts
 
