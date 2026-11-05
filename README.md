@@ -102,15 +102,28 @@ Install `mlx-lm` in the project environment, then evaluate the unquantized
 `Qwen/Qwen3.5-0.8B` checkpoint on all FLORES+ devtest pairs:
 
 ```bash
+hf download Qwen/Qwen3.5-0.8B \
+  --revision 2fc06364715b967f1860aea9cf38778875588b17 \
+  --local-dir models/Qwen3.5-0.8B
 PYTHONPATH=src .venv/bin/python scripts/eval_qwen.py
 ```
 
-The script downloads a pinned revision into `models/Qwen3.5-0.8B` and uses
+The evaluator loads an existing local checkpoint and uses
 greedy decoding with thinking disabled and a 512-token output limit. It saves
 raw responses, translations, BLEU/chrF/chrF++/TER, the prompt, hashes, runtime
 versions, and settings under `reports/qwen3.5-0.8b/`. References are used only
 for scoring. Each run needs a new `--out` directory. For a smoke test, use
 `--split dev --limit 3 --out reports/qwen3.5-0.8b-smoke`.
+
+To create and evaluate a 4-bit MLX checkpoint:
+
+```bash
+.venv/bin/python -m mlx_lm convert \
+  --hf-path models/Qwen3.5-0.8B --mlx-path models/Qwen3.5-0.8B-4bit \
+  -q --q-bits 4 --q-group-size 64
+PYTHONPATH=src .venv/bin/python scripts/eval_qwen.py \
+  --model models/Qwen3.5-0.8B-4bit --out reports/qwen3.5-0.8b-4bit
+```
 
 The completed baseline and comparison with P0, KazRush, and Qwen3-0.6B are in
 [`docs/qwen3.5-0.8b-eval.md`](docs/qwen3.5-0.8b-eval.md).

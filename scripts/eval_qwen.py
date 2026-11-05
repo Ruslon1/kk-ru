@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate the original Qwen3.5-0.8B weights on KK->RU FLORES+ with MLX."""
+"""Evaluate a local Qwen3.5-0.8B checkpoint on KK->RU FLORES+ with MLX."""
 
 from __future__ import annotations
 
@@ -35,7 +35,10 @@ def sha256(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", type=Path, default=Path("models/Qwen3.5-0.8B"))
+    parser.add_argument(
+        "--model", type=Path, default=Path("models/Qwen3.5-0.8B"),
+        help="Existing local checkpoint directory, original or quantized",
+    )
     parser.add_argument("--split", choices=["dev", "devtest"], default="devtest")
     parser.add_argument("--out", type=Path, default=Path("reports/qwen3.5-0.8b"))
     parser.add_argument("--max-tokens", type=int, default=512)
@@ -44,12 +47,14 @@ def main() -> None:
     args = parser.parse_args()
     if args.max_tokens <= 0 or (args.limit is not None and args.limit <= 0):
         parser.error("--max-tokens and --limit must be positive")
+    if not args.model.is_dir():
+        parser.error(f"Local checkpoint directory does not exist: {args.model}")
 
     import mlx.core as mx
-    from huggingface_hub import snapshot_download
     from mlx.utils import tree_flatten
     from mlx_lm import load, stream_generate
     from mlx_lm.sample_utils import make_sampler
+    from mlx_lm.utils import compute_bits_per_weight, get_total_parameters
     from sacrebleu.metrics import BLEU, CHRF, TER
 
     input_path = Path("data/eval/flores_plus") / f"{args.split}.kk-ru.tsv"
@@ -63,8 +68,7 @@ def main() -> None:
     if records_path.exists():
         raise FileExistsError(f"Choose a new --out directory; {records_path} already exists")
 
-    snapshot_download(MODEL_ID, revision=REVISION, local_dir=args.model)
-    model, tokenizer = load(str(args.model))
+    model, tokenizer, model_config = load(str(args.model), return_config=True)
     parameters = tree_flatten(model.parameters())
     manifest = {
         "model": MODEL_ID,
@@ -73,9 +77,12 @@ def main() -> None:
         "weight_sha256": {
             path.name: sha256(path) for path in sorted(args.model.glob("*.safetensors"))
         },
-        "parameters_text_model": sum(value.size for _, value in parameters),
+        "parameters_text_model": get_total_parameters(model),
+        "parameter_storage_bytes": sum(value.nbytes for _, value in parameters),
+        "bits_per_weight": compute_bits_per_weight(model),
         "dtypes": sorted({str(value.dtype) for _, value in parameters}),
-        "quantized": False,
+        "quantized": bool(model_config.get("quantization")),
+        "quantization": model_config.get("quantization"),
         "backend": "mlx",
         "device": str(mx.default_device()),
         "platform": platform.platform(),
