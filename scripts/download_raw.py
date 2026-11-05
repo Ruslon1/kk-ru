@@ -130,11 +130,6 @@ def _load_kazparc_split(config: str) -> list[tuple[str, str]]:
 
 
 def download_kazparc() -> None:
-    try:
-        from datasets import load_dataset
-    except ImportError as e:
-        raise SystemExit("pip install datasets huggingface_hub") from e
-
     human = _load_kazparc_split("kazparc_raw")
     _write_tsv(RAW / "kazparc_human.kk-ru.tsv", human)
 

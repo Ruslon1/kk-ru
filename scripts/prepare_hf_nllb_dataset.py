@@ -26,7 +26,7 @@ def main() -> None:
         with source_path.open(encoding="utf-8") as source, gzip.open(
             output_path, "wt", encoding="utf-8"
         ) as output:
-            for line_number, line in enumerate(source, 1):
+            for line in source:
                 total += 1
                 record = json.loads(line)
                 translation = record.get("translation", "").strip()

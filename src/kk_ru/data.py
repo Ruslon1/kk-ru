@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import random
 import shutil
 import time
+from itertools import islice
 from pathlib import Path
 from typing import Iterator
 
@@ -59,55 +60,55 @@ def _cache_metadata(tsv_path: str, tokenizer, max_len: int) -> dict:
     }
 
 
+def _encoded_pairs(tsv_path: str, tokenizer, max_len: int):
+    for source, target in iter_pairs(tsv_path):
+        src_ids = tokenizer.encode(source, add_bos=True)[:max_len]
+        tgt_ids = tokenizer.encode(target, add_bos=True, add_eos=True)[:max_len]
+        tgt_ids[-1] = tokenizer.eos_id
+        yield src_ids, tgt_ids
+
+
 def _build_mmap_cache(
     tsv_path: str, tokenizer, max_len: int, cache_dir: Path, metadata: dict
 ) -> None:
     temporary_dir = cache_dir.with_name(f"{cache_dir.name}.tmp-{time.time_ns()}")
     temporary_dir.mkdir(parents=True, exist_ok=False)
-    cache_dir = temporary_dir
     src_offsets = [0]
     tgt_offsets = [0]
-    count = 0
-    with (cache_dir / "src.bin").open("wb") as src_file, (cache_dir / "tgt.bin").open("wb") as tgt_file:
-        for kk, ru in iter_pairs(tsv_path):
-            src_ids = tokenizer.encode(kk, add_bos=True)[:max_len]
-            tgt_ids = tokenizer.encode(ru, add_bos=True, add_eos=True)[:max_len]
-            if tgt_ids[-1:] != [tokenizer.eos_id]:
-                tgt_ids[-1] = tokenizer.eos_id
+    with (temporary_dir / "src.bin").open("wb") as src_file, (temporary_dir / "tgt.bin").open("wb") as tgt_file:
+        for src_ids, tgt_ids in _encoded_pairs(tsv_path, tokenizer, max_len):
             np.asarray(src_ids, dtype=np.int32).tofile(src_file)
             np.asarray(tgt_ids, dtype=np.int32).tofile(tgt_file)
             src_offsets.append(src_offsets[-1] + len(src_ids))
             tgt_offsets.append(tgt_offsets[-1] + len(tgt_ids))
-            count += 1
-    np.save(cache_dir / "src_offsets.npy", np.asarray(src_offsets, dtype=np.int64))
-    np.save(cache_dir / "tgt_offsets.npy", np.asarray(tgt_offsets, dtype=np.int64))
-    metadata = {**metadata, "count": count}
-    (cache_dir / "meta.json").write_text(json.dumps(metadata), encoding="utf-8")
-    final_dir = Path(str(cache_dir).split(".tmp-", 1)[0])
-    if final_dir.exists():
-        shutil.rmtree(cache_dir)
+    np.save(temporary_dir / "src_offsets.npy", np.asarray(src_offsets, dtype=np.int64))
+    np.save(temporary_dir / "tgt_offsets.npy", np.asarray(tgt_offsets, dtype=np.int64))
+    metadata = {**metadata, "count": len(src_offsets) - 1}
+    (temporary_dir / "meta.json").write_text(json.dumps(metadata), encoding="utf-8")
+    if cache_dir.exists():
+        shutil.rmtree(temporary_dir)
     else:
-        cache_dir.replace(final_dir)
+        temporary_dir.replace(cache_dir)
 
 
 class TranslationDataset(Dataset):
-    """Map-style dataset backed by disk-backed token arrays and offsets."""
+    """Read token IDs through memory-mapped arrays, or keep a limited subset in RAM."""
 
     def __init__(self, tsv_path: str, tokenizer, max_len: int, cache: bool = True, limit: int = 0):
-        self.max_len = max_len
-        self._temporary = limit > 0
         if limit:
             self._load_limited(tsv_path, tokenizer, max_len, limit)
             return
 
         cache_dir = _cache_dir(tsv_path)
-        if not _cache_is_complete(cache_dir) and cache:
-            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir, _cache_metadata(tsv_path, tokenizer, max_len))
-        elif not _cache_is_complete(cache_dir):
-            raise FileNotFoundError(f"token cache is missing: {cache_dir}")
+        expected_metadata = _cache_metadata(tsv_path, tokenizer, max_len)
+        if not _cache_is_complete(cache_dir):
+            if not cache:
+                raise FileNotFoundError(f"token cache is missing: {cache_dir}")
+            if cache_dir.exists():
+                shutil.rmtree(cache_dir)
+            _build_mmap_cache(tsv_path, tokenizer, max_len, cache_dir, expected_metadata)
 
         meta = json.loads((cache_dir / "meta.json").read_text(encoding="utf-8"))
-        expected_metadata = _cache_metadata(tsv_path, tokenizer, max_len)
         if {key: meta.get(key) for key in expected_metadata} != expected_metadata:
             if not cache:
                 raise ValueError(f"token cache {cache_dir} is stale or incompatible")
@@ -123,13 +124,8 @@ class TranslationDataset(Dataset):
 
     def _load_limited(self, tsv_path: str, tokenizer, max_len: int, limit: int) -> None:
         src, tgt = [], []
-        for index, (kk, ru) in enumerate(iter_pairs(tsv_path)):
-            if index >= limit:
-                break
-            src.append(tokenizer.encode(kk, add_bos=True)[:max_len])
-            target = tokenizer.encode(ru, add_bos=True, add_eos=True)[:max_len]
-            if target[-1:] != [tokenizer.eos_id]:
-                target[-1] = tokenizer.eos_id
+        for source, target in islice(_encoded_pairs(tsv_path, tokenizer, max_len), limit):
+            src.append(source)
             tgt.append(target)
         self.src_tokens = np.asarray([token for item in src for token in item], dtype=np.int32)
         self.tgt_tokens = np.asarray([token for item in tgt for token in item], dtype=np.int32)

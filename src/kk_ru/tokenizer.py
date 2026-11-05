@@ -44,10 +44,7 @@ class Tokenizer:
         return SpecialTokens(self.pad_id, self.unk_id, self.bos_id, self.eos_id)
 
     def encode(self, text: str, add_bos: bool = False, add_eos: bool = False) -> list[int]:
-        if not text:
-            ids = []
-        else:
-            ids = self.sp.encode(text, out_type=int)
+        ids = self.sp.encode(text, out_type=int)
         if add_bos:
             ids = [self.bos_id, *ids]
         if add_eos:

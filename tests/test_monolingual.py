@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -24,3 +25,13 @@ def test_kazakh_filter_rejects_links_and_short_noise():
 
 def test_sentence_hash_is_stable():
     assert MODULE.sentence_hash("мәтін") == MODULE.sentence_hash("мәтін")
+
+
+def test_load_rows_streams_a_local_dataset(tmp_path):
+    rows = [{"text": "Бұл қазақ тіліндегі сөйлем."}, {"text": "Тағы бір мәтін."}]
+    (tmp_path / "train.jsonl").write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+
+    assert list(MODULE.load_rows(str(tmp_path), "", "train")) == rows

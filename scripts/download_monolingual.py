@@ -102,7 +102,7 @@ def load_rows(dataset: str, config: str, split: str):
     kwargs = {"path": dataset, "split": split, "streaming": True}
     if config:
         kwargs["name"] = config
-    return load_dataset(**kwargs)
+    yield from load_dataset(**kwargs)
 
 
 def extract(args: argparse.Namespace) -> dict:

@@ -47,6 +47,15 @@ class NllbPipelineTests(unittest.TestCase):
         self.assertNotIn('"index": 4', content)
         self.assertNotIn('"index": 3', content)
 
+    def test_rank_counts_match_sources_with_start_and_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source.tsv"
+            source.write_text("zero\n\none\tref\ntwo\nthree\nfour\n", encoding="utf-8")
+            for rank in range(3):
+                rows = list(NLLB.iter_rank_sources(source, rank, 3, start=1, limit=4))
+                self.assertEqual(NLLB.count_rank_sources(source, rank, 3, start=1, limit=4), len(rows))
+                self.assertTrue(all(1 <= index < 5 for index, _ in rows))
+
     def test_resume_compacts_duplicate_successes(self):
         with tempfile.TemporaryDirectory() as directory:
             shard = Path(directory) / "rank-00000.jsonl"

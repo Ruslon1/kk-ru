@@ -1,4 +1,5 @@
 GPUS ?= 6
+PYTHON ?= python3
 PLATFORM ?= linux/amd64
 MODEL ?= p0
 CONFIG = configs/$(MODEL).yaml
@@ -45,7 +46,7 @@ diffusion-benchmark:
 	docker run --rm --gpus all -v "$(PWD)/data:/workspace/kk-ru/data" -v "$(PWD)/checkpoints:/workspace/kk-ru/checkpoints" -v "$(PWD)/reports:/workspace/kk-ru/reports" kk-ru:cuda128 python3 scripts/benchmark_diffusion.py --config configs/diffusion.yaml --checkpoint $(DIFFUSION_CHECKPOINT) --baseline-checkpoint $(BASELINE_CHECKPOINT) --split dev
 
 test:
-	PYTHONPATH=src python3 -m unittest discover -s tests -v
+	PYTHONPATH=src $(PYTHON) -m pytest tests -v
 
 docker-build:
 	docker build --platform $(PLATFORM) -t kk-ru:cuda128 .

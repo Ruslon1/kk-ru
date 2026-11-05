@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def normalize(text: str) -> str:
-    return " ".join(text.split()).strip()
+    return " ".join(text.split())
 
 
 def bucket(text: str) -> str:
@@ -95,7 +95,7 @@ def main() -> None:
     gold_limits = {key: args.gold_count // 3 for key in ("short", "medium", "long")}
     gold_limits["long"] += args.gold_count - sum(gold_limits.values())
     gold_samples, gold_seen = reservoir_by_bucket(
-        ((kk, ru) for kk, ru in iter_pairs(args.gold)), gold_limits, args.seed
+        iter_pairs(args.gold), gold_limits, args.seed
     )
     mono_limits = {"short": args.mono_count // 3, "medium": args.mono_count // 3}
     mono_limits["long"] = args.mono_count - sum(mono_limits.values())

@@ -44,17 +44,7 @@ def iter_rank_sources(path: Path, rank: int, world_size: int, start: int = 0, li
 
 
 def count_rank_sources(path: Path, rank: int, world_size: int, start: int = 0, limit: int = 0) -> int:
-    end = start + limit if limit else None
-    count = 0
-    with path.open(encoding="utf-8") as file:
-        for index, line in enumerate(file):
-            if index < start:
-                continue
-            if end is not None and index >= end:
-                break
-            if line.rstrip("\r\n").partition("\t")[0].strip() and index % world_size == rank:
-                count += 1
-    return count
+    return sum(1 for _ in iter_rank_sources(path, rank, world_size, start, limit))
 
 
 def truncate_partial_jsonl(path: Path) -> None:
