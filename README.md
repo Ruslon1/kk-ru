@@ -91,6 +91,23 @@ python scripts/prepare_translation_benchmark.py
 5 000 gold-пар из train и 2 000 монолингвальных предложений. Для строк из
 `monolingual` поле `ru` пустое и используется только для quality filtering.
 
+### Qwen3.5-0.8B baseline on Apple Silicon
+
+With `mlx-lm` installed in the project environment, evaluate the original,
+unquantized `Qwen/Qwen3.5-0.8B` checkpoint on all FLORES+ devtest pairs:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/eval_qwen.py
+```
+
+The script downloads a pinned model revision into `models/Qwen3.5-0.8B`, uses
+greedy decoding with thinking disabled and a 512-token output limit, and saves
+raw responses, translations, BLEU/chrF/chrF++/TER, and a reproducibility manifest
+under `reports/qwen3.5-0.8b/`. References are used only for scoring. The manifest
+records the prompt, model and dataset hashes, runtime versions, and generation
+settings. Choose a new `--out` directory for each run; existing records are never
+overwritten. For a smoke test, use `--split dev --limit 3 --out reports/qwen3.5-0.8b-smoke`.
+
 Подготовка полного серверного цикла NLLB → merge → обучение описана в
 [`docs/nllb-p0-pipeline.md`](docs/nllb-p0-pipeline.md). Она включает resumable
 shards, проверку полноты и сборку основного merged-корпуса.
