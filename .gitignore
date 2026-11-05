@@ -32,7 +32,6 @@ __pycache__/
 
 # Training artifacts and logs
 checkpoints/
-models/
 reports/
 wandb/
 runs/
